@@ -33,7 +33,7 @@ export default function KanbanCard({ application }: { application: Application }
   }
 
   const phone = application.profiles?.phone?.replace(/\D/g, '')
-  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${application.profiles?.full_name}, I saw your application on Navaudyog for the ${application.jobs?.title} role.`)}`
+  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${application.profiles?.full_name}, I saw your application on Nava Udyog for the ${application.jobs?.title} role.`)}`
 
   return (
     <div

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { BRAND } from '@/lib/constants'
 import { LogOut, User, Briefcase, LayoutDashboard } from 'lucide-react'
+import Logo from './Logo'
 
 export default function Navbar() {
   const { user, profile, signOut, dashboardPath } = useAuth()
@@ -14,12 +15,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
-                {BRAND.name.toUpperCase()}
-              </span>
-              <span className="hidden sm:block text-xs italic font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                {BRAND.tagline}
-              </span>
+              <Logo />
             </Link>
           </div>
 

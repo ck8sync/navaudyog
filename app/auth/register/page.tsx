@@ -165,7 +165,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="btn-accent w-full py-4 text-lg"
             >
-              {loading ? 'Creating account...' : 'Join Navaudyog'}
+              {loading ? 'Creating account...' : 'Join Nava Udyog'}
             </button>
 
             <div className="text-center pt-4">

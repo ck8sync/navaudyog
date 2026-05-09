@@ -26,10 +26,10 @@ export const KANBAN_COLUMNS = [
 ] as const;
 
 export const BRAND = {
-  primary: "#1A237E",
+  primary: "#1976D2", // Updated to match logo blue
   accent: "#FF6F00",
   tagline: "New Job, New Start.",
-  name: "Navaudyog",
+  name: "Nava Udyog",
 };
 
 export const ROLE_PATHS: Record<string, string> = {

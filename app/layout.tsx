@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Navaudyog - New Job, New Start.",
+  title: "Nava Udyog - New Job, New Start.",
   description: "India's blue and grey collar job portal",
 };
 

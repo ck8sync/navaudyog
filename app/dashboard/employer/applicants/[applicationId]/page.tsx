@@ -38,7 +38,7 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
     .order('created_at', { ascending: false })
 
   const phone = app.profiles?.phone?.replace(/\D/g, '')
-  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${app.profiles?.full_name}, I saw your application on Navaudyog...`)}`
+  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${app.profiles?.full_name}, I saw your application on Nava Udyog...`)}`
   const emp = app.profiles?.employee_profiles
 
   return (

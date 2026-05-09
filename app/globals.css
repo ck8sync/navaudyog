@@ -48,9 +48,9 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Brand Colors */
-  --color-brand-navy: #1A237E;
+  --color-brand-navy: #1976D2;
   --color-brand-amber: #FF6F00;
-  --color-brand-light: #E8EAF6;
+  --color-brand-light: #E3F2FD;
 }
 
 :root {

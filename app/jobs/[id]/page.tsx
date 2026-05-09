@@ -119,7 +119,7 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
                       redirect(`/jobs/${job.id}?applied=true`)
                     }}>
                       <h3 className="font-black text-gray-900 mb-4">Quick Apply</h3>
-                      <p className="text-sm text-gray-500 mb-6">No resume needed. Your Navaudyog profile will be shared with the employer.</p>
+                      <p className="text-sm text-gray-500 mb-6">No resume needed. Your Nava Udyog profile will be shared with the employer.</p>
                       <button type="submit" className="btn-primary w-full py-4 text-lg">
                         Apply Now
                       </button>

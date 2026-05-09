@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { JOB_CATEGORIES, BRAND } from "@/lib/constants";
 import { ArrowRight, Briefcase, Users, Building2, CheckCircle2, Globe } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const CATEGORY_ICONS: Record<string, any> = {
   "Construction & Labour": Building2,
@@ -31,7 +32,7 @@ export default function Home() {
           </h1>
           
           <p className="max-w-2xl mx-auto text-xl text-gray-600 mb-12 leading-relaxed">
-            Navaudyog is India's premier platform connecting skilled workers with growing industries. No resume? No problem. Your skills are your profile.
+            Nava Udyog is India's premier platform connecting skilled workers with growing industries. No resume? No problem. Your skills are your profile.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -123,10 +124,8 @@ export default function Home() {
       <footer className="bg-white border-t border-gray-100 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start">
-             <span className="text-xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
-                {BRAND.name.toUpperCase()}
-              </span>
-              <p className="text-gray-400 text-sm mt-1">{BRAND.tagline}</p>
+             <Logo />
+             <p className="text-gray-400 text-sm mt-1">{BRAND.tagline}</p>
           </div>
           
           <div className="flex gap-8 text-sm font-bold text-gray-500">
@@ -136,7 +135,7 @@ export default function Home() {
           </div>
           
           <div className="text-gray-400 text-sm font-medium">
-             © 2024 Navaudyog. Made with ❤️ in India.
+             © 2026 Nava Udyog. Made with ❤️ in India.
           </div>
         </div>
       </footer>
