@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { BRAND } from '@/lib/constants'
 import { User, Search, Phone, MapPin, Briefcase, GraduationCap } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function AdminEmployeesPage() {
   const supabase = await createClient()
@@ -75,10 +76,13 @@ export default async function AdminEmployeesPage() {
                        </div>
                     </td>
                     <td className="px-8 py-6">
-                       <div className="flex items-center text-brand-navy font-black text-xs uppercase tracking-widest">
+                       <Link 
+                          href={`/dashboard/admin/employees/${emp.id}`}
+                          className="flex items-center text-brand-navy font-black text-xs uppercase tracking-widest hover:underline"
+                       >
                           <div className="w-2 h-2 bg-brand-navy rounded-full mr-2" />
-                          Complete
-                       </div>
+                          View Full Details
+                       </Link>
                     </td>
                   </tr>
                 ))}
