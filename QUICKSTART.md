@@ -47,9 +47,25 @@ cd navaudyog
 # In Supabase SQL Editor:
 # 1. Open your project → SQL Editor
 # 2. Click "+ New Query"
-# 3. Copy entire contents of: supabase-migration.sql
+# 3. Run migrations included in this repo:
+#    - supabase/migrations/001_create_profiles.sql
+#    - supabase/migrations/002_seed_profiles.sql (optional; replace user id placeholder first)
 # 4. Execute (Click Run button)
-# 5. Verify 6 tables created: profiles, employee_profiles, employer_profiles, jobs, applications, saved_jobs
+# 5. Verify `profiles` table exists: `select * from public.profiles limit 5;`
+```
+
+### Applying migrations with Supabase CLI (optional)
+```bash
+# Install CLI: https://supabase.com/docs/guides/cli
+npm i -g supabase
+
+# Login and link to project
+supabase login
+supabase link --project-ref <your-project-ref>
+
+# Run SQL file(s) locally against your project
+supabase db query supabase/migrations/001_create_profiles.sql
+supabase db query supabase/migrations/002_seed_profiles.sql # replace placeholder id first
 ```
 
 ### 5. **Start Development Server**

@@ -1,23 +1,22 @@
-import { JOB_CATEGORIES } from '@/lib/constants'
-
 interface CategoryBadgeProps {
   category: string
+  className?: string
 }
 
-export default function CategoryBadge({ category }: CategoryBadgeProps) {
-  const categoryColors: Record<string, string> = {
-    'Construction & Labour': 'bg-orange-100 text-orange-800',
-    'Manufacturing & Factory': 'bg-blue-100 text-blue-800',
-    'Delivery & Logistics': 'bg-green-100 text-green-800',
-    'Security & Housekeeping': 'bg-red-100 text-red-800',
-    'Retail & Sales': 'bg-purple-100 text-purple-800',
-    'Driver & Transport': 'bg-yellow-100 text-yellow-800',
-  }
+const CATEGORY_COLORS: Record<string, string> = {
+  "Construction & Labour": "bg-orange-50 text-orange-700 border-orange-200",
+  "Manufacturing & Factory": "bg-blue-50 text-blue-700 border-blue-200",
+  "Delivery & Logistics": "bg-purple-50 text-purple-700 border-purple-200",
+  "Security & Housekeeping": "bg-slate-50 text-slate-700 border-slate-200",
+  "Retail & Sales": "bg-pink-50 text-pink-700 border-pink-200",
+  "Driver & Transport": "bg-cyan-50 text-cyan-700 border-cyan-200",
+}
 
-  const color = categoryColors[category] || 'bg-gray-100 text-gray-800'
+export default function CategoryBadge({ category, className = "" }: CategoryBadgeProps) {
+  const colorClass = CATEGORY_COLORS[category] || "bg-gray-50 text-gray-700 border-gray-200"
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${color}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${colorClass} ${className}`}>
       {category}
     </span>
   )

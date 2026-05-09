@@ -46,6 +46,11 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Brand Colors */
+  --color-brand-navy: #1A237E;
+  --color-brand-amber: #FF6F00;
+  --color-brand-light: #E8EAF6;
 }
 
 :root {
@@ -122,9 +127,45 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   html {
     @apply font-sans;
   }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform active:scale-95;
+    background-color: var(--color-brand-navy);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    @apply shadow-lg opacity-90;
+  }
+
+  .btn-accent {
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform active:scale-95;
+    background-color: var(--color-brand-amber);
+    color: white;
+  }
+
+  .card-premium {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

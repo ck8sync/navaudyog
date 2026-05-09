@@ -1,90 +1,67 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { BRAND } from '@/lib/constants'
+import { Users, Building2, Briefcase, TrendingUp, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect('/auth/login')
 
   // Fetch metrics
-  const { count: employeeCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'employee')
+  const { count: employeesCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'employee')
+  const { count: employersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'employer')
+  const { count: jobsCount } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active')
+  const { count: appsCount } = await supabase.from('applications').select('*', { count: 'exact', head: true })
 
-  const { count: employerCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'employer')
-
-  const { count: activeJobsCount } = await supabase
-    .from('jobs')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
-
-  const { count: applicationsCount } = await supabase
-    .from('applications')
-    .select('*', { count: 'exact', head: true })
-
-  const { data: applications } = await supabase
-    .from('applications')
-    .select('status')
-
-  const hiredCount = applications?.filter(a => a.status === 'hired').length || 0
-  const successRate = applicationsCount && hiredCount ? ((hiredCount / applicationsCount) * 100).toFixed(1) : '0'
+  const metrics = [
+    { label: 'Job Seekers', value: employeesCount || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Employers', value: employersCount || 0, icon: Building2, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Active Jobs', value: jobsCount || 0, icon: Briefcase, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Applications', value: appsCount || 0, icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
+  ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl font-black text-gray-900 mb-12">Platform Overview</h1>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-700">Total Employees</h2>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{employeeCount || 0}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          {metrics.map((m, i) => (
+            <div key={i} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+               <div className={`w-14 h-14 rounded-2xl ${m.bg} ${m.color} flex items-center justify-center mb-6`}>
+                  <m.icon className="w-7 h-7" />
+               </div>
+               <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{m.label}</p>
+               <p className="text-3xl font-black text-gray-900">{m.value}</p>
+            </div>
+          ))}
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-700">Total Employers</h2>
-          <p className="text-3xl font-bold text-green-600 mt-2">{employerCount || 0}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-700">Active Jobs</h2>
-          <p className="text-3xl font-bold text-purple-600 mt-2">{activeJobsCount || 0}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-700">Total Applications</h2>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">{applicationsCount || 0}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-700">Success Rate</h2>
-          <p className="text-3xl font-bold text-red-600 mt-2">{successRate}%</p>
-        </div>
-      </div>
 
-      {/* Admin Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/dashboard/admin/employees" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-          <h2 className="text-lg font-semibold mb-2">Employees</h2>
-          <p className="text-gray-600">View all employee data and manage users</p>
-        </Link>
-        <Link href="/dashboard/admin/employers" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-          <h2 className="text-lg font-semibold mb-2">Employers</h2>
-          <p className="text-gray-600">View all employer data and manage accounts</p>
-        </Link>
-        <Link href="/dashboard/admin/jobs" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-          <h2 className="text-lg font-semibold mb-2">Jobs</h2>
-          <p className="text-gray-600">Moderate and manage job postings</p>
-        </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <Link href="/dashboard/admin/employees" className="card-premium group">
+              <h3 className="text-xl font-black mb-4">Employee Directory</h3>
+              <p className="text-gray-500 mb-6 text-sm">Manage all job seekers, view profiles, and handle moderation.</p>
+              <div className="flex justify-between items-center">
+                 <span className="text-brand-navy font-bold">Go to Employees</span>
+                 <Users className="w-5 h-5 text-brand-navy" />
+              </div>
+           </Link>
+           <Link href="/dashboard/admin/employers" className="card-premium group">
+              <h3 className="text-xl font-black mb-4">Employer Directory</h3>
+              <p className="text-gray-500 mb-6 text-sm">Monitor company activities and manage business accounts.</p>
+              <div className="flex justify-between items-center">
+                 <span className="text-brand-navy font-bold">Go to Employers</span>
+                 <Building2 className="w-5 h-5 text-brand-navy" />
+              </div>
+           </Link>
+           <Link href="/dashboard/admin/jobs" className="card-premium group">
+              <h3 className="text-xl font-black mb-4">Job Moderation</h3>
+              <p className="text-gray-500 mb-6 text-sm">Review, approve, or close job listings across the platform.</p>
+              <div className="flex justify-between items-center">
+                 <span className="text-brand-navy font-bold">Go to Jobs</span>
+                 <Briefcase className="w-5 h-5 text-brand-navy" />
+              </div>
+           </Link>
+        </div>
       </div>
     </div>
   )

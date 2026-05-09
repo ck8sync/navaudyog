@@ -23,10 +23,17 @@ export default function RegisterPage() {
 
     const supabase = createClient()
 
-    // Sign up
+    // Sign up with metadata for the database trigger
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          role,
+          full_name: fullName,
+          phone,
+        }
+      }
     })
 
     if (signUpError) {
@@ -36,155 +43,146 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
-      // Insert profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          role,
-          full_name: fullName,
-          phone,
-        })
-
-      if (profileError) {
-        setError('Failed to create profile: ' + profileError.message)
-      } else {
-        // Redirect to profile setup
-        router.push(`/profile/${role}`)
-      }
+      // Redirect to profile setup
+      // Note: The profiles record is now created automatically via database trigger
+      router.push(`/profile/${role}`)
     }
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h1 className="text-center text-3xl font-bold" style={{ color: BRAND.primary }}>
-            {BRAND.name}
-          </h1>
-          <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
-            Create your account
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="absolute top-0 right-1/2 translate-x-1/2 w-[600px] h-[600px] bg-brand-light opacity-20 blur-[120px] rounded-full z-0" />
+      
+      <div className="max-w-md w-full space-y-8 relative z-10">
+        <div className="text-center">
+          <Link href="/" className="inline-block">
+            <h1 className="text-4xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
+              {BRAND.name.toUpperCase()}
+            </h1>
+          </Link>
+          <h2 className="mt-4 text-xl font-black text-gray-900 uppercase tracking-tight">
+            Create Your Account
           </h2>
+          <p className="mt-2 text-gray-400 font-bold uppercase tracking-widest text-xs">Join India's real workforce</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            type="button"
-            className={`flex-1 py-2 px-4 text-center text-sm font-medium ${
-              role === 'employee'
-                ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setRole('employee')}
-          >
-            I am a Job Seeker
-          </button>
-          <button
-            type="button"
-            className={`flex-1 py-2 px-4 text-center text-sm font-medium ${
-              role === 'employer'
-                ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setRole('employer')}
-          >
-            I am an Employer
-          </button>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                className="mt-1 block w-full px-3 py-4 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
-                placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 block w-full px-3 py-4 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 block w-full px-3 py-4 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                className="mt-1 block w-full px-3 py-4 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
-                placeholder="Enter your phone number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-gray-100">
+          {/* Role Tabs */}
+          <div className="flex p-1 bg-gray-50 rounded-2xl mb-8">
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-4 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              style={{ backgroundColor: BRAND.primary }}
+              type="button"
+              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                role === 'employee'
+                  ? 'bg-white text-brand-navy shadow-sm border border-gray-100'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+              onClick={() => setRole('employee')}
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              Job Seeker
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                role === 'employer'
+                  ? 'bg-white text-brand-navy shadow-sm border border-gray-100'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+              onClick={() => setRole('employer')}
+            >
+              Employer
             </button>
           </div>
 
-          <div className="text-center">
-            <Link
-              href="/auth/login"
-              className="text-sm text-gray-600 hover:text-gray-900"
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="fullName" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  required
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
+                  placeholder="Enter your name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="phone" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  required
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
+                  placeholder="+91 00000 00000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-accent w-full py-4 text-lg"
             >
-              Already have an account? Sign in
-            </Link>
-          </div>
-        </form>
+              {loading ? 'Creating account...' : 'Join Navaudyog'}
+            </button>
+
+            <div className="text-center pt-4">
+              <Link
+                href="/auth/login"
+                className="text-sm font-bold text-gray-400 hover:text-brand-navy transition-colors"
+              >
+                Already have an account? <span className="text-brand-navy">Sign in</span>
+              </Link>
+            </div>
+          </form>
+        </div>
+        
+        <p className="text-center text-gray-400 text-xs font-bold uppercase tracking-widest">
+           🇮🇳 New Job, New Start.
+        </p>
       </div>
     </div>
   )
-}
+}

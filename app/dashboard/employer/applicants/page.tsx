@@ -30,10 +30,10 @@ interface Application {
   profiles?: {
     full_name: string
     phone: string
-  }
-  employee_profiles?: {
-    city: string
-    years_experience: string
+    employee_profiles?: {
+      city: string
+      years_experience: string
+    }
   }
   jobs?: {
     title: string
@@ -63,9 +63,12 @@ export default function KanbanBoard() {
       .from('applications')
       .select(`
         *,
-        profiles(full_name, phone),
-        employee_profiles(city, years_experience),
-        jobs(title)
+        profiles:employee_id(
+          full_name, 
+          phone,
+          employee_profiles(city, years_experience)
+        ),
+        jobs:job_id(title)
       `)
       .in('job_id', 
         (await supabase

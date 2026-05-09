@@ -2,21 +2,24 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Phone, MessageSquare, MapPin, Briefcase, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 interface Application {
   id: string
   profiles?: {
     full_name: string
     phone: string
-  }
-  employee_profiles?: {
-    city: string
-    years_experience: string
+    employee_profiles?: {
+      city: string
+      years_experience: string
+    }
   }
   jobs?: {
     title: string
   }
   note: string
+  created_at: string
 }
 
 export default function KanbanCard({ application }: { application: Application }) {
@@ -29,8 +32,8 @@ export default function KanbanCard({ application }: { application: Application }
     transition,
   }
 
-  const whatsappMessage = `Hi ${application.profiles?.full_name}, I saw your application on Navaudyog`
-  const whatsappUrl = `https://wa.me/91${application.profiles?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`
+  const phone = application.profiles?.phone?.replace(/\D/g, '')
+  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${application.profiles?.full_name}, I saw your application on Navaudyog for the ${application.jobs?.title} role.`)}`
 
   return (
     <div
@@ -38,29 +41,55 @@ export default function KanbanCard({ application }: { application: Application }
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white p-4 rounded-lg shadow-md cursor-grab active:cursor-grabbing border border-gray-200"
+      className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-grab active:cursor-grabbing hover:shadow-md transition-all group"
     >
-      <h4 className="font-semibold text-gray-900 mb-2">{application.profiles?.full_name}</h4>
-      <p className="text-sm text-gray-600">{application.employee_profiles?.city}</p>
-      <p className="text-sm text-gray-600">{application.employee_profiles?.years_experience}</p>
-      <p className="text-sm text-gray-600 mb-2">{application.jobs?.title}</p>
-      {application.note && <p className="text-xs text-gray-500 italic mb-2">"{application.note}"</p>}
-      <div className="flex gap-2 mt-2">
+      <div className="flex justify-between items-start mb-4">
+         <div>
+            <h4 className="font-black text-gray-900 group-hover:text-brand-navy transition-colors">{application.profiles?.full_name}</h4>
+            <div className="flex items-center text-[10px] font-black text-brand-amber uppercase tracking-widest">
+               {application.jobs?.title}
+            </div>
+         </div>
+      </div>
+
+      <div className="space-y-2 mb-6">
+         <div className="flex items-center text-xs text-gray-500 font-bold">
+            <MapPin className="w-3 h-3 mr-2 opacity-50" /> {application.profiles?.employee_profiles?.city}
+         </div>
+         <div className="flex items-center text-xs text-gray-500 font-bold">
+            <Briefcase className="w-3 h-3 mr-2 opacity-50" /> {application.profiles?.employee_profiles?.years_experience} exp
+         </div>
+      </div>
+
+      {application.note && (
+        <div className="bg-gray-50 p-3 rounded-xl mb-6 italic text-[11px] text-gray-500 border border-gray-100">
+           "{application.note}"
+        </div>
+      )}
+
+      <div className="flex gap-2">
         <a
-          href={`tel:+91${application.profiles?.phone?.replace(/\D/g, '')}`}
-          className="flex-1 text-xs py-1 px-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-center"
+          href={`tel:+91${phone}`}
+          className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-brand-light text-brand-navy rounded-lg hover:bg-brand-navy hover:text-white transition-all"
         >
-          Call
+          <Phone className="w-3 h-3" /> Call
         </a>
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 text-xs py-1 px-2 bg-green-100 text-green-700 rounded hover:bg-green-200 text-center"
+          className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all"
         >
-          WhatsApp
+          <MessageSquare className="w-3 h-3" /> WhatsApp
         </a>
       </div>
+
+      <Link 
+         href={`/dashboard/employer/applicants/${application.id}`}
+         className="mt-4 flex items-center justify-center text-[10px] font-black text-gray-400 hover:text-brand-navy transition-colors uppercase tracking-widest"
+      >
+         View Full Profile <ChevronRight className="w-3 h-3 ml-1" />
+      </Link>
     </div>
   )
 }

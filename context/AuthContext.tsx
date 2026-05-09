@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_PATHS } from '@/lib/constants'
+import { useRouter } from 'next/navigation'
 
 interface Profile {
   id: string
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   const supabase = createClient()
 
@@ -66,7 +68,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .single()
 
     if (error) {
-      console.error('Error fetching profile:', error)
+      // Provide clearer logging and guidance for missing table errors
+      console.error('Error fetching profile:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      })
+
+      if (error.code === 'PGRST205') {
+        console.error(
+          "Supabase PostgREST error PGRST205: 'public.profiles' table not found. Run the SQL migration to create the table."
+        )
+      }
+
       setProfile(null)
     } else {
       setProfile(data)
@@ -75,6 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
   }
 
   const dashboardPath = profile ? ROLE_PATHS[profile.role] : null
