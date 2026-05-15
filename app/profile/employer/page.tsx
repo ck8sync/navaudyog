@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { COMPANY_TYPES, BRAND } from '@/lib/constants'
+import { Upload, X, Building2 } from 'lucide-react'
 
 export default function EmployerProfileSetup() {
   const [companyName, setCompanyName] = useState('')
@@ -12,6 +13,8 @@ export default function EmployerProfileSetup() {
   const [locations, setLocations] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [description, setDescription] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -25,6 +28,30 @@ export default function EmployerProfileSetup() {
     setError('')
 
     const supabase = createClient()
+    let logo_url = null
+
+    if (logoFile) {
+      const fileExt = logoFile.name.split('.').pop()
+      const fileName = `${user.id}/logo.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('employer-logos')
+        .upload(filePath, logoFile, { upsert: true })
+
+      if (uploadError) {
+        setError('Error uploading logo: ' + uploadError.message)
+        setLoading(false)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('employer-logos')
+        .getPublicUrl(filePath)
+      
+      logo_url = publicUrl
+    }
+
     const { error } = await supabase
       .from('employer_profiles')
       .upsert({
@@ -34,6 +61,7 @@ export default function EmployerProfileSetup() {
         locations: locations.split(',').map(l => l.trim()),
         contact_phone: contactPhone,
         description,
+        logo_url: logo_url || undefined
       })
 
     if (error) {
@@ -45,6 +73,14 @@ export default function EmployerProfileSetup() {
     setLoading(false)
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setLogoFile(file)
+      setLogoPreview(URL.createObjectURL(file))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
@@ -53,6 +89,44 @@ export default function EmployerProfileSetup() {
             Set Up Your Employer Profile
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col items-center mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-4 w-full text-center">
+                Company Logo
+              </label>
+              <div className="relative group">
+                <div 
+                  className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50 group-hover:border-brand-navy transition-colors cursor-pointer"
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-center p-4">
+                      <Upload className="w-8 h-8 mx-auto text-gray-400 group-hover:text-brand-navy mb-2" />
+                      <span className="text-xs text-gray-500">Upload Logo</span>
+                    </div>
+                  )}
+                </div>
+                {logoPreview && (
+                  <button 
+                    type="button"
+                    onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <input 
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2 italic text-center">Recommended: Square logo, max 2MB</p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company Name

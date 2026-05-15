@@ -14,14 +14,14 @@ export default async function EmployeeDashboard() {
   // Fetch applications
   const { data: applications } = await supabase
     .from('applications')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name))')
+    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
     .eq('employee_id', user.id)
     .order('created_at', { ascending: false })
 
   // Fetch saved jobs
   const { data: savedJobs } = await supabase
     .from('saved_jobs')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name))')
+    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
     .eq('employee_id', user.id)
 
   // Fetch profile
@@ -34,7 +34,7 @@ export default async function EmployeeDashboard() {
   // Fetch recommended jobs (recent active jobs)
   const { data: recommendedJobs } = await supabase
     .from('jobs')
-    .select('*, employer_profiles(company_name)')
+    .select('*, employer_profiles(company_name, logo_url)')
     .eq('status', 'active')
     .limit(3)
     .order('created_at', { ascending: false })
@@ -71,9 +71,19 @@ export default async function EmployeeDashboard() {
                   {applications.map((app: any) => (
                     <div key={app.id} className="card-premium flex items-center justify-between p-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-brand-navy">
-                           <Briefcase className="w-6 h-6" />
-                        </div>
+                        {app.jobs?.employer_profiles?.logo_url ? (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 flex-shrink-0 shadow-sm">
+                            <img 
+                              src={app.jobs.employer_profiles.logo_url} 
+                              alt={app.jobs.employer_profiles.company_name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-brand-navy">
+                             <Briefcase className="w-6 h-6" />
+                          </div>
+                        )}
                         <div>
                            <h3 className="font-black text-gray-900">{app.jobs?.title}</h3>
                            <p className="text-sm text-brand-amber font-bold">{app.jobs?.employer_profiles?.company_name}</p>
@@ -149,9 +159,19 @@ export default async function EmployeeDashboard() {
                   {recommendedJobs?.map((job: any) => (
                     <Link key={job.id} href={`/jobs/${job.id}`} className="block group">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                           <Briefcase className="w-5 h-5 text-brand-navy" />
-                        </div>
+                        {job.employer_profiles?.logo_url ? (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 shrink-0">
+                            <img 
+                              src={job.employer_profiles.logo_url} 
+                              alt={job.employer_profiles.company_name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                             <Briefcase className="w-5 h-5 text-brand-navy" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                            <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-brand-navy transition-colors">{job.title}</h4>
                            <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{job.employer_profiles?.company_name}</p>

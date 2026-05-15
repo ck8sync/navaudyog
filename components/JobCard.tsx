@@ -17,6 +17,7 @@ interface JobCardProps {
     created_at: string
     employer_profiles?: {
       company_name: string
+      logo_url?: string
     }
   }
   isSaved?: boolean
@@ -45,9 +46,27 @@ export default function JobCard({ job, isSaved, onSaveToggle }: JobCardProps) {
         <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-navy transition-colors mb-1">
           {job.title}
         </h3>
-        <p className="text-brand-amber font-bold text-sm mb-4">
-          {job.employer_profiles?.company_name}
-        </p>
+        <div className="flex items-center gap-3 mb-4">
+          {job.employer_profiles?.logo_url ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-gray-100 flex-shrink-0">
+              <img 
+                src={job.employer_profiles.logo_url} 
+                alt={job.employer_profiles.company_name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+              <Briefcase className="w-5 h-5" />
+            </div>
+          )}
+          <div>
+            <p className="text-brand-amber font-black text-sm uppercase tracking-tight">
+              {job.employer_profiles?.company_name}
+            </p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase">Verified Employer</p>
+          </div>
+        </div>
 
         <div className="space-y-3 mb-6">
           <div className="flex items-center text-gray-600 text-sm">

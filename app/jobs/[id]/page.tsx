@@ -45,9 +45,23 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
               <div className="space-y-4">
                 <CategoryBadge category={job.category} className="bg-white/10 text-white border-white/20" />
                 <h1 className="text-3xl md:text-5xl font-black tracking-tighter">{job.title}</h1>
-                <div className="flex items-center text-brand-light font-bold text-lg">
-                  <Building2 className="w-5 h-5 mr-2 opacity-70" />
-                  {job.employer_profiles?.company_name}
+                <div className="flex items-center gap-4">
+                  {job.employer_profiles?.logo_url ? (
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 p-1 flex-shrink-0">
+                      <img 
+                        src={job.employer_profiles.logo_url} 
+                        alt={job.employer_profiles.company_name}
+                        className="w-full h-full object-contain rounded-xl"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-8 h-8 opacity-50" />
+                    </div>
+                  )}
+                  <div className="flex items-center text-brand-light font-bold text-lg">
+                    {job.employer_profiles?.company_name}
+                  </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -88,9 +102,20 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
                     <span className="w-8 h-1 bg-brand-amber mr-3 rounded-full" />
                     About the Company
                   </h2>
-                  <p className="text-gray-600 text-lg">
-                    {job.employer_profiles?.description || "A leading company in the industry providing excellent opportunities for growth."}
-                  </p>
+                  <div className="flex gap-6 items-start">
+                    {job.employer_profiles?.logo_url && (
+                      <div className="w-20 h-20 rounded-2xl border border-gray-100 p-2 flex-shrink-0">
+                        <img 
+                          src={job.employer_profiles.logo_url} 
+                          alt={job.employer_profiles.company_name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+                    <p className="text-gray-600 text-lg leading-relaxed">
+                      {job.employer_profiles?.description || "A leading company in the industry providing excellent opportunities for growth."}
+                    </p>
+                  </div>
                 </section>
               </div>
 

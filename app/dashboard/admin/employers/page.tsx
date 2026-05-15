@@ -46,8 +46,25 @@ export default async function AdminEmployersPage() {
                 {employers?.map((emp: any) => (
                   <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6">
-                      <div className="font-black text-gray-900">{emp.employer_profiles?.company_name || emp.full_name}</div>
-                      <div className="text-xs text-brand-amber font-bold uppercase tracking-tight">Verified Employer</div>
+                      <div className="flex items-center gap-4">
+                        {emp.employer_profiles?.logo_url ? (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 flex-shrink-0 shadow-sm">
+                            <img 
+                              src={emp.employer_profiles.logo_url} 
+                              alt={emp.employer_profiles.company_name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+                            <Building2 className="w-6 h-6" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-black text-gray-900">{emp.employer_profiles?.company_name || emp.full_name}</div>
+                          <div className="text-xs text-brand-amber font-bold uppercase tracking-tight">Verified Employer</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <span className="text-xs font-black uppercase bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
