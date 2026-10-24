@@ -4,7 +4,7 @@ import { JOB_CATEGORIES, PAY_TYPES, BRAND } from '@/lib/constants'
 import { Search, Filter, MapPin, Briefcase } from 'lucide-react'
 
 export default async function JobsPage(props: {
-  searchParams: Promise<{ category?: string; location?: string; pay_type?: string }>
+  searchParams: Promise<{ category?: string; location?: string; pay_type?: string; query?: string }>
 }) {
   const searchParams = await props.searchParams
   const supabase = await createClient()
@@ -19,6 +19,9 @@ export default async function JobsPage(props: {
     `)
     .eq('status', 'active')
 
+  if (searchParams.query) {
+    query = query.ilike('title', `%${searchParams.query}%`)
+  }
   if (searchParams.category) {
     query = query.eq('category', searchParams.category)
   }

@@ -37,8 +37,9 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
     .eq('employee_id', app.employee_id)
     .order('created_at', { ascending: false })
 
-  const phone = app.profiles?.phone?.replace(/\D/g, '')
-  const whatsappUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${app.profiles?.full_name}, I saw your application on Nava Udyog...`)}`
+  const phone = app.profiles?.phone?.replace(/\D/g, '') || ''
+  const candidateName = app.profiles?.full_name || 'Candidate'
+  const whatsappUrl = phone ? `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${candidateName}, I saw your application on Nava Udyog...`)}` : '#'
   const emp = app.profiles?.employee_profiles
 
   return (
@@ -55,22 +56,30 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                  <div className="p-8 md:p-12 bg-gradient-to-br from-brand-navy to-[#0D1250] text-white">
                     <div className="flex justify-between items-start gap-6 mb-8">
                        <div>
-                          <h1 className="text-3xl md:text-5xl font-black tracking-tighter">{app.profiles?.full_name}</h1>
+                          <h1 className="text-3xl md:text-5xl font-black tracking-tighter">{candidateName}</h1>
                           <div className="flex items-center text-brand-light font-bold mt-2">
                              <MapPin className="w-4 h-4 mr-2 opacity-70" />
-                             {emp?.city}
+                             {emp?.city || 'Location not specified'}
                           </div>
                        </div>
                        <StatusBadge status={app.status} className="bg-white/10 text-white border-white/20" />
                     </div>
 
                     <div className="flex flex-wrap gap-4">
-                       <a href={`tel:+91${phone}`} className="bg-brand-amber hover:bg-brand-amber/90 text-brand-navy px-8 py-3 rounded-xl font-black text-sm transition-all flex items-center gap-2">
-                          <Phone className="w-4 h-4" /> Call Candidate
-                       </a>
-                       <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4" /> WhatsApp
-                       </a>
+                       {phone ? (
+                         <>
+                           <a href={`tel:+91${phone}`} className="bg-brand-amber hover:bg-brand-amber/90 text-brand-navy px-8 py-3 rounded-xl font-black text-sm transition-all flex items-center gap-2">
+                              <Phone className="w-4 h-4" /> Call Candidate
+                           </a>
+                           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4" /> WhatsApp
+                           </a>
+                         </>
+                       ) : (
+                         <div className="bg-white/10 text-white border border-white/20 px-6 py-3 rounded-xl font-bold text-xs flex items-center gap-2">
+                            Contact details require applicant permission
+                         </div>
+                       )}
                     </div>
                  </div>
 

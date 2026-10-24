@@ -9,6 +9,7 @@ export default function Logo({ className = "h-8 w-auto", showText = true }: { cl
           src="/logo.png"
           alt="Nava Udyog Logo"
           fill
+          sizes="40px"
           className="object-contain"
           priority
         />

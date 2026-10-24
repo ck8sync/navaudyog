@@ -136,36 +136,58 @@
 
 @layer components {
   .glass {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+    @apply bg-white/80 backdrop-blur-md border border-white/40 shadow-xl;
   }
   
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform active:scale-95;
-    background-color: var(--color-brand-navy);
+    @apply px-7 py-3.5 rounded-xl font-bold transition-all duration-300 transform active:scale-95 inline-flex items-center justify-center shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer;
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
     color: white;
   }
   
   .btn-primary:hover {
-    @apply shadow-lg opacity-90;
+    box-shadow: 0 10px 25px -5px rgba(25, 118, 210, 0.4);
   }
 
   .btn-accent {
-    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform active:scale-95;
-    background-color: var(--color-brand-amber);
+    @apply px-7 py-3.5 rounded-xl font-bold transition-all duration-300 transform active:scale-95 inline-flex items-center justify-center shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer;
+    background: linear-gradient(135deg, #FF6F00 0%, #F57C00 100%);
     color: white;
   }
 
+  .btn-accent:hover {
+    box-shadow: 0 10px 25px -5px rgba(255, 111, 0, 0.4);
+  }
+
+  .btn-secondary {
+    @apply px-7 py-3.5 rounded-xl font-bold bg-white text-gray-800 border border-gray-200 transition-all duration-300 transform active:scale-95 inline-flex items-center justify-center hover:bg-gray-50 hover:border-brand-navy/30 hover:text-brand-navy shadow-sm hover:shadow cursor-pointer;
+  }
+
   .card-premium {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply bg-white rounded-3xl shadow-sm border border-gray-100/90 p-7 transition-all duration-300 hover:shadow-xl hover:border-brand-navy/20 hover:-translate-y-1 relative;
+  }
+
+  .bg-grid-pattern {
+    background-image: radial-gradient(rgba(25, 118, 210, 0.08) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
   }
 }
 
 @keyframes float {
   0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
   100% { transform: translateY(0px); }
 }
 
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+
 .animate-float {
-  animation: float 3s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 6s ease-in-out infinite;
 }

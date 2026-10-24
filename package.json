@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "db:view": "node scripts/inspect-db.js",
     "migrate:supabase": "node scripts/run-migrations.js",
     "build": "next build",
     "start": "next start",

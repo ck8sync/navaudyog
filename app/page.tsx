@@ -1,142 +1,270 @@
-import Link from "next/link";
-import { JOB_CATEGORIES, BRAND } from "@/lib/constants";
-import { ArrowRight, Briefcase, Users, Building2, CheckCircle2, Globe } from "lucide-react";
-import Logo from "@/components/Logo";
+'use client';
 
-const CATEGORY_ICONS: Record<string, any> = {
-  "Construction & Labour": Building2,
-  "Manufacturing & Factory": Building2,
-  "Delivery & Logistics": Globe,
-  "Security & Housekeeping": CheckCircle2,
-  "Retail & Sales": Users,
-  "Driver & Transport": Briefcase,
-};
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
+import './landing.css';
 
-export default function Home() {
+export default function HomePage() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('on');
+          observer.unobserve(entry.target);
+
+          const statEls = entry.target.querySelectorAll<HTMLElement>('[data-n]');
+          statEls.forEach((el) => {
+            const targetNum = Number(el.dataset.n);
+            const suffix = el.dataset.s || '';
+            const startTime = performance.now();
+
+            const animate = (now: number) => {
+              const progress = Math.min(1, (now - startTime) / 1100);
+              const currentVal = Math.round(targetNum * (1 - Math.pow(1 - progress, 3)));
+              el.textContent = `${currentVal}${progress < 1 ? '' : suffix}`;
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              }
+            };
+            requestAnimationFrame(animate);
+          });
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    const elements = containerRef.current?.querySelectorAll('.rv');
+    elements?.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-32 flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-brand-light opacity-30 blur-[120px] rounded-full" />
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-light text-brand-navy text-sm font-bold mb-8 animate-fade-in">
-            <span className="mr-2">🇮🇳</span> Made in India for the Real Workforce
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-gray-900 mb-8 leading-[1.1]">
-            <span style={{ color: BRAND.primary }}>New Job.</span><br />
-            <span style={{ color: BRAND.accent }}>New Start.</span>
-          </h1>
-          
-          <p className="max-w-2xl mx-auto text-xl text-gray-600 mb-12 leading-relaxed">
-            Nava Udyog is India's premier platform connecting skilled workers with growing industries. No resume? No problem. Your skills are your profile.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link href="/jobs" className="btn-primary flex items-center group w-full sm:w-auto justify-center py-4 px-10 text-lg">
-              Find Your Job
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link href="/auth/register" className="btn-accent w-full sm:w-auto justify-center py-4 px-10 text-lg">
-              Post a Job Listing
-            </Link>
-          </div>
-          
-          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-             <div className="text-center">
-                <div className="text-3xl font-black text-brand-navy">10K+</div>
-                <div className="text-sm text-gray-500 font-bold uppercase tracking-widest">Active Jobs</div>
-             </div>
-             <div className="text-center">
-                <div className="text-3xl font-black text-brand-navy">50K+</div>
-                <div className="text-sm text-gray-500 font-bold uppercase tracking-widest">Workers</div>
-             </div>
-             <div className="text-center">
-                <div className="text-3xl font-black text-brand-navy">500+</div>
-                <div className="text-sm text-gray-500 font-bold uppercase tracking-widest">Companies</div>
-             </div>
-             <div className="text-center">
-                <div className="text-3xl font-black text-brand-navy">24/7</div>
-                <div className="text-sm text-gray-500 font-bold uppercase tracking-widest">Support</div>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Grid */}
-      <section className="py-24 bg-gray-50 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div className="max-w-xl">
-              <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Explore Industries</h2>
-              <p className="text-lg text-gray-600">Choose from thousands of high-demand roles in these top categories across India.</p>
-            </div>
-            <Link href="/jobs" className="text-brand-navy font-black flex items-center hover:underline">
-              View All Roles <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {JOB_CATEGORIES.map((category) => {
-              const Icon = CATEGORY_ICONS[category] || Building2;
-              return (
-                <Link
-                  key={category}
-                  href={`/jobs?category=${encodeURIComponent(category)}`}
-                  className="card-premium group"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-brand-light flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-7 h-7" style={{ color: BRAND.primary }} />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2">{category}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                    Find jobs in factory, site work, or field roles in {category.split(' & ')[0]}.
-                  </p>
-                  <span className="text-xs font-black uppercase tracking-widest text-brand-amber inline-flex items-center">
-                    Browse Now <ArrowRight className="ml-1 w-3 h-3" />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Banner */}
-      <section className="py-20 bg-brand-navy text-white text-center">
-        <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-black mb-8 leading-tight italic">
-            "Sahi Naukri, Sahi Shuruat."
-          </h2>
-          <p className="text-xl text-brand-light/80 mb-12">
-            Join thousands of workers who found their dream jobs in 24 hours.
-          </p>
-          <Link href="/auth/register" className="inline-block bg-white text-brand-navy px-10 py-4 rounded-xl font-black text-lg hover:bg-brand-light transition-colors">
-            Start Your Journey 🇮🇳
+    <div ref={containerRef} className="landing-root">
+      <header>
+        <div className="wrap">
+          <Link className="logo" href="#top">
+            Nava <b>Udyog</b>
           </Link>
+          <nav>
+            <Link href="/jobs">Browse jobs</Link>
+            <Link href="/auth/login">Log in</Link>
+            <Link className="btn" href="/auth/register">Join now</Link>
+          </nav>
         </div>
-      </section>
+      </header>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex flex-col items-center md:items-start">
-             <Logo />
-             <p className="text-gray-400 text-sm mt-1">{BRAND.tagline}</p>
+      <main id="top">
+        {/* Hero */}
+        <section className="hero">
+          <div className="wrap">
+            <div>
+              <h1>
+                New job.<br />
+                <em>New start.</em>
+              </h1>
+              <p className="l">
+                Skilled people look for work. Businesses look for hands. Nava Udyog is the one stop where they find each other, and everything that comes after.
+              </p>
+              <div className="cta">
+                <Link className="btn" href="/jobs">Find a job</Link>
+                <Link className="btn g" href="/auth/register">Post a job</Link>
+              </div>
+            </div>
+            <div className="cards" aria-hidden="true">
+              <div className="card">
+                <span className="pill">Verified employer</span>
+                <h3>Warehouse Fleet Coordinator</h3>
+                <p className="m">Apex Logistics India · Bangalore Outer Ring Road</p>
+                <p className="pay">₹25,000 / month</p>
+              </div>
+              <div className="card">
+                <span className="pill">No resume needed</span>
+                <h3>Your skills are your profile</h3>
+                <div className="chips">
+                  <span>Driving</span>
+                  <span>Dispatch</span>
+                  <span>Kannada</span>
+                  <span>Hindi</span>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex gap-8 text-sm font-bold text-gray-500">
-             <Link href="/jobs" className="hover:text-brand-navy">Jobs</Link>
-             <Link href="/auth/login" className="hover:text-brand-navy">Employer Login</Link>
-             <Link href="/terms" className="hover:text-brand-navy">Terms</Link>
+        </section>
+
+        {/* Stories */}
+        <section className="sec alt">
+          <div className="wrap">
+            <div className="head rv">
+              <h2>Two people. One missing link.</h2>
+            </div>
+            <div className="two rv">
+              <div className="story">
+                <p className="who">The worker</p>
+                <p>Ravi has driven trucks for nine years and knows every road in the city.</p>
+                <p>He has never owned a resume, so every new job starts with asking around and waiting.</p>
+              </div>
+              <div className="story">
+                <p className="who">The employer</p>
+                <p>Meena runs a fast-growing warehouse and needs a fleet coordinator by Monday.</p>
+                <p>She doesn’t need a degree. She needs someone she can trust, and a quick way to find them.</p>
+              </div>
+            </div>
           </div>
-          
-          <div className="text-gray-400 text-sm font-medium">
-             © 2026 Nava Udyog. Made with ❤️ in India.
+        </section>
+
+        {/* Meet Banner */}
+        <section className="meet">
+          <div className="wrap rv">
+            <h2>Then they meet.</h2>
+            <p>On Nava Udyog, your skills are your profile. No resume, no long forms, no waiting.</p>
           </div>
+        </section>
+
+        {/* Steps */}
+        <section className="sec">
+          <div className="wrap">
+            <div className="head rv">
+              <h2>Three steps from looking to hired.</h2>
+            </div>
+            <div className="steps rv">
+              <div className="step">
+                <b>1</b>
+                <h3>Add your skills</h3>
+                <p>Your name, your number and the work you do.</p>
+              </div>
+              <div className="step">
+                <b>2</b>
+                <h3>Apply in one tap</h3>
+                <p>Your profile goes straight to the employer.</p>
+              </div>
+              <div className="step">
+                <b>3</b>
+                <h3>Start work</h3>
+                <p>Pay is shown upfront: daily, weekly or monthly.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Categories */}
+        <section className="sec alt">
+          <div className="wrap">
+            <div className="head rv">
+              <h2>Work in every trade that keeps India moving.</h2>
+            </div>
+            <div className="grid rv">
+              <Link className="tr" href="/jobs?category=Construction%20%26%20Labour">
+                <h3>Construction &amp; Labour</h3>
+                <p>Site work and field roles</p>
+                <span>Browse jobs</span>
+              </Link>
+              <Link className="tr" href="/jobs?category=Manufacturing%20%26%20Factory">
+                <h3>Manufacturing &amp; Factory</h3>
+                <p>Operators and line workers</p>
+                <span>Browse jobs</span>
+              </Link>
+              <Link className="tr" href="/jobs?category=Delivery%20%26%20Logistics">
+                <h3>Delivery &amp; Logistics</h3>
+                <p>Riders, warehouse and fleet</p>
+                <span>Browse jobs</span>
+              </Link>
+              <Link className="tr" href="/jobs?category=Security%20%26%20Housekeeping">
+                <h3>Security &amp; Housekeeping</h3>
+                <p>Guards and facility staff</p>
+                <span>Browse jobs</span>
+              </Link>
+              <Link className="tr" href="/jobs?category=Retail%20%26%20Sales">
+                <h3>Retail &amp; Sales</h3>
+                <p>Store and field sales</p>
+                <span>Browse jobs</span>
+              </Link>
+              <Link className="tr" href="/jobs?category=Driver%20%26%20Transport">
+                <h3>Driver &amp; Transport</h3>
+                <p>Cab, truck and company drivers</p>
+                <span>Browse jobs</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats */}
+        <section className="sec">
+          <div className="wrap rv">
+            <div className="stats">
+              <div className="stat">
+                <strong data-n="10" data-s="K+">0</strong>
+                <span>Active jobs</span>
+              </div>
+              <div className="stat">
+                <strong data-n="50" data-s="K+">0</strong>
+                <span>Workers</span>
+              </div>
+              <div className="stat">
+                <strong data-n="500" data-s="+">0</strong>
+                <span>Companies</span>
+              </div>
+              <div className="stat">
+                <strong>24/7</strong>
+                <span>Support</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Coming Soon */}
+        <section className="sec alt soon">
+          <div className="wrap">
+            <div className="head rv">
+              <span className="pill">Coming soon</span>
+              <h2 style={{ marginTop: '16px' }}>Hiring is only the beginning.</h2>
+              <p>Soon, Nava Udyog will be the one stop for every workforce need, not just jobs.</p>
+            </div>
+            <div className="grid rv">
+              <div className="card"><h3>Recruitment</h3><p>Bulk, leadership and niche hiring</p></div>
+              <div className="card"><h3>Staffing</h3><p>Temporary, contract and permanent</p></div>
+              <div className="card"><h3>Payroll</h3><p>Setup, outsourcing and compliance</p></div>
+              <div className="card"><h3>HR Consulting</h3><p>Policies and compliance</p></div>
+              <div className="card"><h3>Employee Management</h3><p>From onboarding to performance</p></div>
+              <div className="card"><h3>Training &amp; HR Technology</h3><p>Skills and tools for your team</p></div>
+            </div>
+            <p className="rv" style={{ marginTop: '36px' }}>
+              <Link className="btn" href="/auth/register">Get early access as an employer</Link>
+            </p>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="sec">
+          <div className="wrap">
+            <div className="fin rv">
+              <div className="box d">
+                <h2>I’m looking for work.</h2>
+                <p>Create a free profile and apply to verified employers in minutes.</p>
+                <Link className="btn" style={{ background: 'var(--bg)', color: 'var(--ink)' }} href="/auth/register">
+                  Join as a worker
+                </Link>
+              </div>
+              <div className="box">
+                <h2>I’m hiring.</h2>
+                <p>Post a job and reach skilled workers across India.</p>
+                <Link className="btn" href="/auth/register">
+                  Post a job
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div className="wrap">
+          <strong style={{ color: 'var(--ink)' }}>Nava Udyog</strong>
+          <span>New job. New start.</span>
+          <span>Made in India · © 2026 Nava Udyog</span>
         </div>
       </footer>
     </div>

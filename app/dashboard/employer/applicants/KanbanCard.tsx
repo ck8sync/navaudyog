@@ -45,20 +45,24 @@ export default function KanbanCard({ application }: { application: Application }
     >
       <div className="flex justify-between items-start mb-4">
          <div>
-            <h4 className="font-black text-gray-900 group-hover:text-brand-navy transition-colors">{application.profiles?.full_name}</h4>
+            <h4 className="font-black text-gray-900 group-hover:text-brand-navy transition-colors">
+              {application.profiles?.full_name || 'Applicant'}
+            </h4>
             <div className="flex items-center text-[10px] font-black text-brand-amber uppercase tracking-widest">
-               {application.jobs?.title}
+               {application.jobs?.title || 'Job Application'}
             </div>
          </div>
       </div>
 
       <div className="space-y-2 mb-6">
          <div className="flex items-center text-xs text-gray-500 font-bold">
-            <MapPin className="w-3 h-3 mr-2 opacity-50" /> {application.profiles?.employee_profiles?.city}
+            <MapPin className="w-3 h-3 mr-2 opacity-50" /> {application.profiles?.employee_profiles?.city || 'Location not specified'}
          </div>
-         <div className="flex items-center text-xs text-gray-500 font-bold">
-            <Briefcase className="w-3 h-3 mr-2 opacity-50" /> {application.profiles?.employee_profiles?.years_experience} exp
-         </div>
+         {application.profiles?.employee_profiles?.years_experience && (
+           <div className="flex items-center text-xs text-gray-500 font-bold">
+              <Briefcase className="w-3 h-3 mr-2 opacity-50" /> {application.profiles.employee_profiles.years_experience} exp
+           </div>
+         )}
       </div>
 
       {application.note && (
@@ -68,20 +72,28 @@ export default function KanbanCard({ application }: { application: Application }
       )}
 
       <div className="flex gap-2">
-        <a
-          href={`tel:+91${phone}`}
-          className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-brand-light text-brand-navy rounded-lg hover:bg-brand-navy hover:text-white transition-all"
-        >
-          <Phone className="w-3 h-3" /> Call
-        </a>
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all"
-        >
-          <MessageSquare className="w-3 h-3" /> WhatsApp
-        </a>
+        {phone ? (
+          <>
+            <a
+              href={`tel:+91${phone}`}
+              className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-brand-light text-brand-navy rounded-lg hover:bg-brand-navy hover:text-white transition-all"
+            >
+              <Phone className="w-3 h-3" /> Call
+            </a>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all"
+            >
+              <MessageSquare className="w-3 h-3" /> WhatsApp
+            </a>
+          </>
+        ) : (
+          <span className="flex-1 text-center py-2 bg-gray-50 text-gray-400 rounded-lg text-[10px] font-bold">
+            Direct Contact Locked
+          </span>
+        )}
       </div>
 
       <Link 
