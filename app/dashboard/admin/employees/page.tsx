@@ -1,7 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { User, Search, Phone, MapPin, Briefcase, GraduationCap } from 'lucide-react'
+import { Search, Phone, MapPin, Briefcase } from 'lucide-react'
 import Link from 'next/link'
+
+interface EmployeeDirectoryItem {
+  id: string
+  full_name: string
+  phone: string
+  created_at: string
+  employee_profiles?: {
+    city?: string
+    years_experience?: string
+    job_categories?: string[]
+  }
+}
 
 export default async function AdminEmployeesPage() {
   const supabase = await createClient()
@@ -15,6 +26,8 @@ export default async function AdminEmployeesPage() {
   if (error) {
     console.error('Error fetching employees:', error)
   }
+
+  const typedEmployees = (employees || []) as unknown as EmployeeDirectoryItem[]
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -44,12 +57,12 @@ export default async function AdminEmployeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {employees?.map((emp: any) => (
+                {typedEmployees.map((emp) => (
                   <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                          <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-navy font-black">
-                            {emp.full_name[0]}
+                            {emp.full_name ? emp.full_name[0] : 'U'}
                          </div>
                          <div>
                             <div className="font-black text-gray-900">{emp.full_name}</div>
@@ -86,7 +99,7 @@ export default async function AdminEmployeesPage() {
                     </td>
                   </tr>
                 ))}
-                {(!employees || employees.length === 0) && (
+                {typedEmployees.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-8 py-12 text-center text-gray-500 italic">
                       No employees found in the directory.

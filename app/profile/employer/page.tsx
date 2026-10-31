@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { COMPANY_TYPES, BRAND } from '@/lib/constants'
-import { Upload, X, Building2 } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 
 export default function EmployerProfileSetup() {
   const [companyName, setCompanyName] = useState('')
@@ -18,7 +18,7 @@ export default function EmployerProfileSetup() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +35,7 @@ export default function EmployerProfileSetup() {
       const fileName = `${user.id}/logo.${fileExt}`
       const filePath = `${fileName}`
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('employer-logos')
         .upload(filePath, logoFile, { upsert: true })
 
@@ -52,7 +52,7 @@ export default function EmployerProfileSetup() {
       logo_url = publicUrl
     }
 
-    const { error } = await supabase
+    const { error: upsertError } = await supabase
       .from('employer_profiles')
       .upsert({
         id: user.id,
@@ -64,8 +64,8 @@ export default function EmployerProfileSetup() {
         logo_url: logo_url || undefined
       })
 
-    if (error) {
-      setError(error.message)
+    if (upsertError) {
+      setError(upsertError.message)
     } else {
       alert('Profile updated successfully!')
       router.push('/dashboard/employer')
@@ -76,9 +76,20 @@ export default function EmployerProfileSetup() {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview)
+      }
       setLogoFile(file)
       setLogoPreview(URL.createObjectURL(file))
     }
+  }
+
+  const handleRemoveLogo = () => {
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview)
+    }
+    setLogoFile(null)
+    setLogoPreview(null)
   }
 
   return (
@@ -110,7 +121,7 @@ export default function EmployerProfileSetup() {
                 {logoPreview && (
                   <button 
                     type="button"
-                    onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                    onClick={handleRemoveLogo}
                     className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -131,7 +142,7 @@ export default function EmployerProfileSetup() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company Name
               </label>
-              <input
+              <input 
                 type="text"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -145,7 +156,7 @@ export default function EmployerProfileSetup() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company Type
               </label>
-              <select
+              <select 
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 value={companyType}
@@ -162,7 +173,7 @@ export default function EmployerProfileSetup() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 City / Location(s)
               </label>
-              <input
+              <input 
                 type="text"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -176,7 +187,7 @@ export default function EmployerProfileSetup() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Contact Phone
               </label>
-              <input
+              <input 
                 type="tel"
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -190,7 +201,7 @@ export default function EmployerProfileSetup() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 About Company
               </label>
-              <textarea
+              <textarea 
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 rows={4}
                 placeholder="Describe your company (optional)"
@@ -201,7 +212,7 @@ export default function EmployerProfileSetup() {
 
             {error && <p className="text-red-600">{error}</p>}
 
-            <button
+            <button 
               type="submit"
               disabled={loading}
               className="w-full py-3 px-4 text-white rounded-md hover:opacity-90 disabled:opacity-50"

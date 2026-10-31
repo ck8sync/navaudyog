@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import { BRAND } from '@/lib/constants'
-import { MapPin, IndianRupee, Users, Calendar, Building2, ChevronLeft, CheckCircle2 } from 'lucide-react'
+import { MapPin, Users, Calendar, Building2, ChevronLeft, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import CategoryBadge from '@/components/CategoryBadge'
 import StatusBadge from '@/components/StatusBadge'
@@ -135,8 +134,8 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
                       'use server'
                       if (!user) redirect('/auth/login')
                       
-                      const supabase = await createClient()
-                      await supabase.from('applications').insert({
+                      const supa = await createClient()
+                      await supa.from('applications').insert({
                         job_id: job.id,
                         employee_id: user.id,
                         status: 'applied'

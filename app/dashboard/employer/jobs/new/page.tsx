@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { JOB_CATEGORIES, PAY_TYPES, BRAND } from '@/lib/constants'
+import { JOB_CATEGORIES, PAY_TYPES } from '@/lib/constants'
 import { Briefcase, ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
 
@@ -170,12 +170,12 @@ export default function NewJobPage() {
                   {loading ? 'Publishing...' : 'Publish Job Listing'}
                </button>
                <button 
-                  type="button"
+                  type="button" 
                   disabled={loading}
                   className="px-8 py-4 rounded-xl border-2 border-gray-100 font-black text-gray-400 hover:border-brand-navy hover:text-brand-navy transition-all"
                   onClick={(e) => {
                      setStatus('draft');
-                     handleSubmit(e as any);
+                     handleSubmit(e);
                   }}
                >
                   Save as Draft

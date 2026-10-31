@@ -1,6 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { Building2, Search, Phone, MapPin, Briefcase } from 'lucide-react'
+import { Building2, Search, Phone, MapPin } from 'lucide-react'
+
+interface EmployerDirectoryItem {
+  id: string
+  full_name: string
+  phone: string
+  employer_profiles?: {
+    company_name?: string
+    company_type?: string
+    locations?: string[]
+    logo_url?: string
+  }
+}
 
 export default async function AdminEmployersPage() {
   const supabase = await createClient()
@@ -14,6 +25,8 @@ export default async function AdminEmployersPage() {
   if (error) {
     console.error('Error fetching employers:', error)
   }
+
+  const typedEmployers = (employers || []) as unknown as EmployerDirectoryItem[]
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -43,7 +56,7 @@ export default async function AdminEmployersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {employers?.map((emp: any) => (
+                {typedEmployers.map((emp) => (
                   <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
@@ -51,7 +64,7 @@ export default async function AdminEmployersPage() {
                           <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 flex-shrink-0 shadow-sm">
                             <img 
                               src={emp.employer_profiles.logo_url} 
-                              alt={emp.employer_profiles.company_name}
+                              alt={emp.employer_profiles.company_name || 'Company logo'}
                               className="w-full h-full object-contain"
                             />
                           </div>
@@ -90,7 +103,7 @@ export default async function AdminEmployersPage() {
                     </td>
                   </tr>
                 ))}
-                {(!employers || employers.length === 0) && (
+                {typedEmployers.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-8 py-12 text-center text-gray-500 italic">
                       No employers found in the directory.

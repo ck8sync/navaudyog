@@ -1,5 +1,3 @@
-import { BRAND } from '@/lib/constants'
-
 interface StatusBadgeProps {
   status: string
   className?: string

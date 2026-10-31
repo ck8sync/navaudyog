@@ -16,7 +16,6 @@
 
 const fs = require('fs')
 const path = require('path')
-const fetch = require('node-fetch')
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
@@ -29,15 +28,10 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const migrationsDir = path.join(__dirname, '..', 'supabase', 'migrations')
 
 async function runSql(sql) {
-  const url = `${SUPABASE_URL}/rest/v1/rpc/pg_execute_sql`
-  // If pg_execute_sql RPC is not available, fall back to /rpc or SQL editor endpoint
-  // Many projects expose `sql` via the SQL Editor only; this approach uses
-  // the PostgREST RPC endpoint which may not exist. If it fails, we call
-  // the SQL editor REST endpoint via /sql.
-
-  // Try SQL editor endpoint
   const sqlEndpoint = `${SUPABASE_URL}/sql`
-  const res = await fetch(sqlEndpoint, {
+  const fetchFn = typeof fetch !== 'undefined' ? fetch : require('node-fetch')
+
+  const res = await fetchFn(sqlEndpoint, {
     method: 'POST',
     headers: {
       apikey: SERVICE_KEY,
@@ -62,7 +56,7 @@ async function main() {
     console.log('Running', file)
     const sql = fs.readFileSync(p, 'utf8')
     try {
-      const out = await runSql(sql)
+      await runSql(sql)
       console.log('OK:', file)
     } catch (err) {
       console.error('Failed:', file)

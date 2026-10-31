@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Search, Briefcase, User, LayoutDashboard, PlusCircle, Users } from 'lucide-react'
 
 export default function BottomNav() {
-  const { user, profile, dashboardPath } = useAuth()
+  const { user, profile } = useAuth()
   const pathname = usePathname()
 
   if (!user || !profile) return null

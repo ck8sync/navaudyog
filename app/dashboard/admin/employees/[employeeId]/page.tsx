@@ -1,8 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { BRAND } from '@/lib/constants'
-import { Phone, MapPin, Briefcase, ChevronLeft, User, Languages, GraduationCap, Sparkles, CircleDollarSign, Calendar } from 'lucide-react'
+import { Phone, MapPin, Briefcase, ChevronLeft, User, GraduationCap, Sparkles, Calendar } from 'lucide-react'
 import Link from 'next/link'
+
+interface EducationItem {
+  id: string
+  qualification: string
+  institution_name: string
+  board_university: string
+  year_of_passing: string
+  percentage_cgpa: string
+}
+
+interface ExperienceItem {
+  id: string
+  company_name: string
+  designation: string
+  duration: string
+  salary_drawn: string
+  reason_for_leaving?: string
+}
 
 export default async function AdminEmployeeDetailPage(props: { params: Promise<{ employeeId: string }> }) {
   const params = await props.params
@@ -31,6 +48,9 @@ export default async function AdminEmployeeDetailPage(props: { params: Promise<{
     .select('*')
     .eq('employee_id', profile.id)
     .order('created_at', { ascending: false })
+
+  const typedEdu = (education || []) as unknown as EducationItem[]
+  const typedExp = (experiences || []) as unknown as ExperienceItem[]
 
   const emp = profile.employee_profiles
 
@@ -61,9 +81,9 @@ export default async function AdminEmployeeDetailPage(props: { params: Promise<{
                           <Phone className="w-4 h-4" /> {profile.phone}
                        </div>
                        {emp?.alternate_number && (
-                           <div className="bg-white/5 text-white/80 border border-white/10 px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2">
+                            <div className="bg-white/5 text-white/80 border border-white/10 px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2">
                                 Alt: {emp.alternate_number}
-                           </div>
+                            </div>
                        )}
                     </div>
                  </div>
@@ -78,7 +98,7 @@ export default async function AdminEmployeeDetailPage(props: { params: Promise<{
                           <InfoItem label="Gender" value={emp?.gender} />
                           <InfoItem label="Current Address" value={emp?.current_address} fullWidth />
                           <InfoItem label="Permanent Address" value={emp?.permanent_address} fullWidth />
-                          <InfoItem label="Total Experience" value={`${emp?.years_experience} (${emp?.fresher_experienced})`} />
+                          <InfoItem label="Total Experience" value={`${emp?.years_experience || '0'} (${emp?.fresher_experienced || 'Fresher'})`} />
                           <InfoItem label="Expected Salary" value={emp?.expected_salary} />
                        </div>
                     </section>
@@ -87,8 +107,8 @@ export default async function AdminEmployeeDetailPage(props: { params: Promise<{
                     <section>
                        <SectionTitle title="Education" icon={<GraduationCap className="w-5 h-5 text-brand-amber" />} />
                        <div className="space-y-6">
-                          {education && education.length > 0 ? (
-                            education.map((edu: any) => (
+                          {typedEdu.length > 0 ? (
+                            typedEdu.map((edu) => (
                                 <div key={edu.id} className="flex gap-6 items-start p-6 rounded-2xl bg-gray-50/50 border border-gray-50">
                                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                         <GraduationCap className="w-6 h-6 text-brand-navy" />
@@ -112,8 +132,8 @@ export default async function AdminEmployeeDetailPage(props: { params: Promise<{
                     <section>
                        <SectionTitle title="Work History" icon={<Briefcase className="w-5 h-5 text-brand-amber" />} />
                        <div className="space-y-6">
-                          {experiences && experiences.length > 0 ? (
-                            experiences.map((work: any) => (
+                          {typedExp.length > 0 ? (
+                            typedExp.map((work) => (
                                 <div key={work.id} className="flex gap-6 items-start p-6 rounded-2xl bg-gray-50/50 border border-gray-50">
                                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                         <Briefcase className="w-6 h-6 text-brand-navy" />

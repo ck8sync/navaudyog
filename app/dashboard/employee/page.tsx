@@ -1,9 +1,42 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { Briefcase, Bookmark, User, Clock, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Briefcase, Bookmark, User, Clock, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import StatusBadge from '@/components/StatusBadge'
-import CategoryBadge from '@/components/CategoryBadge'
+
+interface ApplicationWithJob {
+  id: string
+  job_id: string
+  status: string
+  created_at: string
+  jobs?: {
+    title: string
+    employer_profiles?: {
+      company_name: string
+      logo_url?: string
+    }
+  }
+}
+
+interface SavedJobItem {
+  id: string
+  job_id: string
+  jobs?: {
+    title: string
+    employer_profiles?: {
+      company_name: string
+      logo_url?: string
+    }
+  }
+}
+
+interface RecommendedJobItem {
+  id: string
+  title: string
+  employer_profiles?: {
+    company_name: string
+    logo_url?: string
+  }
+}
 
 export default async function EmployeeDashboard() {
   const supabase = await createClient()
@@ -39,6 +72,10 @@ export default async function EmployeeDashboard() {
     .limit(3)
     .order('created_at', { ascending: false })
 
+  const typedApps = (applications || []) as unknown as ApplicationWithJob[]
+  const typedSaved = (savedJobs || []) as unknown as SavedJobItem[]
+  const typedRecs = (recommendedJobs || []) as unknown as RecommendedJobItem[]
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,13 +99,13 @@ export default async function EmployeeDashboard() {
                    My Applications
                  </h2>
                  <span className="bg-brand-light text-brand-navy px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
-                    {applications?.length || 0} TOTAL
+                    {typedApps.length} TOTAL
                  </span>
               </div>
 
-              {applications && applications.length > 0 ? (
+              {typedApps.length > 0 ? (
                 <div className="space-y-4">
-                  {applications.map((app: any) => (
+                  {typedApps.map((app) => (
                     <div key={app.id} className="card-premium flex items-center justify-between p-6">
                       <div className="flex items-center gap-4">
                         {app.jobs?.employer_profiles?.logo_url ? (
@@ -103,7 +140,7 @@ export default async function EmployeeDashboard() {
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-gray-100">
-                   <p className="text-gray-500 mb-6">You haven't applied to any jobs yet.</p>
+                   <p className="text-gray-500 mb-6">You haven&apos;t applied to any jobs yet.</p>
                    <Link href="/jobs" className="btn-primary inline-block">Browse Jobs Now</Link>
                 </div>
               )}
@@ -117,17 +154,17 @@ export default async function EmployeeDashboard() {
                <div className="space-y-6">
                   <div className="flex justify-between items-center pb-4 border-b border-white/10">
                      <span className="text-brand-light/70 font-bold">Applied</span>
-                     <span className="text-2xl font-black">{applications?.length || 0}</span>
+                     <span className="text-2xl font-black">{typedApps.length}</span>
                   </div>
                   <div className="flex justify-between items-center pb-4 border-b border-white/10">
                      <span className="text-brand-light/70 font-bold">Interviews</span>
                      <span className="text-2xl font-black text-brand-amber">
-                        {applications?.filter((a: any) => a.status === 'interview').length || 0}
+                        {typedApps.filter((a) => a.status === 'interview').length}
                      </span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span className="text-brand-light/70 font-bold">Saved Jobs</span>
-                     <span className="text-2xl font-black">{savedJobs?.length || 0}</span>
+                     <span className="text-2xl font-black">{typedSaved.length}</span>
                   </div>
                </div>
             </section>
@@ -137,9 +174,9 @@ export default async function EmployeeDashboard() {
                   <Bookmark className="w-5 h-5 mr-3 text-brand-amber" />
                   Saved Jobs
                </h3>
-               {savedJobs && savedJobs.length > 0 ? (
+               {typedSaved.length > 0 ? (
                  <div className="space-y-4">
-                    {savedJobs.map((saved: any) => (
+                    {typedSaved.map((saved) => (
                       <Link key={saved.id} href={`/jobs/${saved.job_id}`} className="block group">
                         <div className="bg-white p-4 rounded-2xl border border-gray-100 group-hover:border-brand-navy transition-all shadow-sm group-hover:shadow-md">
                            <h4 className="font-black text-gray-900 group-hover:text-brand-navy transition-colors">{saved.jobs?.title}</h4>
@@ -156,7 +193,7 @@ export default async function EmployeeDashboard() {
             <section className="bg-white p-8 rounded-3xl border border-gray-100">
                <h3 className="text-lg font-black text-gray-900 mb-6">Explore Jobs</h3>
                <div className="space-y-4">
-                  {recommendedJobs?.map((job: any) => (
+                  {typedRecs.map((job) => (
                     <Link key={job.id} href={`/jobs/${job.id}`} className="block group">
                       <div className="flex items-center gap-3">
                         {job.employer_profiles?.logo_url ? (

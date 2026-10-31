@@ -1,9 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { BRAND } from '@/lib/constants'
-import { Phone, MessageSquare, MapPin, Briefcase, ChevronLeft, User, Languages, Calendar, GraduationCap, Sparkles, Clock, CircleDollarSign } from 'lucide-react'
+import { Phone, MessageSquare, MapPin, Briefcase, ChevronLeft, User, Calendar, GraduationCap, Sparkles, CircleDollarSign } from 'lucide-react'
 import Link from 'next/link'
 import StatusBadge from '@/components/StatusBadge'
+
+interface EducationItem {
+  id: string
+  qualification: string
+  institution_name: string
+  board_university: string
+  year_of_passing: string
+  percentage_cgpa: string
+}
+
+interface ExperienceItem {
+  id: string
+  company_name: string
+  designation: string
+  duration: string
+  salary_drawn: string
+  reason_for_leaving?: string
+}
 
 export default async function ApplicantDetailPage(props: { params: Promise<{ applicationId: string }> }) {
   const params = await props.params
@@ -36,6 +53,9 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
     .select('*')
     .eq('employee_id', app.employee_id)
     .order('created_at', { ascending: false })
+
+  const typedEdu = (education || []) as unknown as EducationItem[]
+  const typedExp = (experiences || []) as unknown as ExperienceItem[]
 
   const phone = app.profiles?.phone?.replace(/\D/g, '') || ''
   const candidateName = app.profiles?.full_name || 'Candidate'
@@ -92,7 +112,7 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                           <InfoItem label="Date of Birth" value={emp?.dob} />
                           <InfoItem label="Gender" value={emp?.gender} />
                           <InfoItem label="Current Address" value={emp?.current_address} fullWidth />
-                          <InfoItem label="Experience" value={`${emp?.years_experience} (${emp?.fresher_experienced})`} />
+                          <InfoItem label="Experience" value={`${emp?.years_experience || '0'} (${emp?.fresher_experienced || 'Fresher'})`} />
                           <InfoItem label="Availability" value={emp?.notice_period || emp?.availability} />
                           <InfoItem label="Expected Salary" value={emp?.expected_salary} />
                           <InfoItem label="Applied For" value={app.jobs?.title} />
@@ -103,8 +123,8 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                     <section>
                        <SectionTitle title="Education" icon={<GraduationCap className="w-5 h-5 text-brand-amber" />} />
                        <div className="space-y-6">
-                          {education && education.length > 0 ? (
-                            education.map((edu: any) => (
+                          {typedEdu.length > 0 ? (
+                            typedEdu.map((edu) => (
                                 <div key={edu.id} className="flex gap-6 items-start p-6 rounded-2xl bg-gray-50/50 border border-gray-50">
                                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                         <GraduationCap className="w-6 h-6 text-brand-navy" />
@@ -128,8 +148,8 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                     <section>
                        <SectionTitle title="Work History" icon={<Briefcase className="w-5 h-5 text-brand-amber" />} />
                        <div className="space-y-6">
-                          {experiences && experiences.length > 0 ? (
-                            experiences.map((work: any) => (
+                          {typedExp.length > 0 ? (
+                            typedExp.map((work) => (
                                 <div key={work.id} className="flex gap-6 items-start p-6 rounded-2xl bg-gray-50/50 border border-gray-50">
                                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                         <Briefcase className="w-6 h-6 text-brand-navy" />
@@ -174,7 +194,7 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Certifications</div>
                              <div className="flex flex-wrap gap-2">
                                 {emp?.certifications?.length > 0 ? emp.certifications.map((cert: string) => (
-                                   <span key={cert} className="bg-brand-amber/10 text-brand-amber-dark px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight border border-brand-amber/20">
+                                   <span key={cert} className="bg-brand-amber/10 text-amber-800 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight border border-brand-amber/20">
                                       {cert}
                                    </span>
                                 )) : <span className="text-gray-400 italic text-sm">No certifications listed.</span>}

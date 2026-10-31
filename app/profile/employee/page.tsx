@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { JOB_CATEGORIES, EXPERIENCE_OPTIONS, PAY_TYPES, AVAILABILITY_OPTIONS, BRAND } from '@/lib/constants'
-import { Plus, Trash2, Save, User, GraduationCap, Briefcase, Sparkles, MapPin, CheckCircle } from 'lucide-react'
+import { JOB_CATEGORIES, EXPERIENCE_OPTIONS, BRAND } from '@/lib/constants'
+import { Plus, Trash2, Save, User, GraduationCap, Briefcase, Sparkles, MapPin } from 'lucide-react'
 
 const LANGUAGES = ['Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Marathi', 'Other']
 
@@ -33,7 +33,7 @@ export default function EmployeeProfileSetup() {
   const [error, setError] = useState('')
   const router = useRouter()
   const { user } = useAuth()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Personal Details
   const [fullName, setFullName] = useState('')
@@ -71,91 +71,91 @@ export default function EmployeeProfileSetup() {
   const [shiftPreference, setShiftPreference] = useState('')
   const [declarationAccepted, setDeclarationAccepted] = useState(false)
 
+
+
   useEffect(() => {
-    if (user) {
-      fetchProfileData()
+    let isMounted = true
+
+    async function loadProfile() {
+      if (!user) return
+      
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile && isMounted) {
+          setFullName(profile.full_name || '')
+          setPhone(profile.phone || '')
+          setEmail(user.email || '')
+        }
+
+        const { data: empProfile } = await supabase
+          .from('employee_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (empProfile && isMounted) {
+          setFatherMotherName(empProfile.father_mother_name || '')
+          setDob(empProfile.dob || '')
+          setGender(empProfile.gender || '')
+          setAlternateNumber(empProfile.alternate_number || '')
+          setCurrentAddress(empProfile.current_address || '')
+          setPermanentAddress(empProfile.permanent_address || '')
+          setCity(empProfile.city || '')
+          setJobCategories(empProfile.job_categories || [])
+          setYearsExperience(empProfile.years_experience || '')
+          setFresherExperienced(empProfile.fresher_experienced || 'Fresher')
+          setTechnicalSkills(empProfile.technical_skills?.join(', ') || '')
+          setCertifications(empProfile.certifications?.join(', ') || '')
+          setLanguages(empProfile.languages || [])
+          setPreferredLocation(empProfile.preferred_location || '')
+          setExpectedSalary(empProfile.expected_salary || '')
+          setNoticePeriod(empProfile.notice_period || '')
+          setShiftPreference(empProfile.shift_preference || '')
+          setDeclarationAccepted(empProfile.declaration_accepted || false)
+        }
+
+        const { data: eduData } = await supabase
+          .from('education_qualifications')
+          .select('*')
+          .eq('employee_id', user.id)
+        
+        if (eduData && eduData.length > 0 && isMounted) {
+          const mergedEdu = [
+              'SSLC/10th', 'PUC/12th', 'Diploma/UG', 'PG/Other'
+          ].map(q => {
+              const found = eduData.find(e => e.qualification === q)
+              return found || { qualification: q, institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' }
+          })
+          setEducation(mergedEdu)
+        }
+
+        const { data: expData } = await supabase
+          .from('work_experiences')
+          .select('*')
+          .eq('employee_id', user.id)
+        
+        if (expData && expData.length > 0 && isMounted) {
+          setExperiences(expData)
+        }
+
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      } finally {
+        if (isMounted) setFetching(false)
+      }
     }
-  }, [user])
 
-  const fetchProfileData = async () => {
-    if (!user) return
-    
-    try {
-      // Fetch basic profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile) {
-        setFullName(profile.full_name || '')
-        setPhone(profile.phone || '')
-        setEmail(user.email || '')
-      }
+    loadProfile()
 
-      // Fetch employee profile
-      const { data: empProfile } = await supabase
-        .from('employee_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      if (empProfile) {
-        setFatherMotherName(empProfile.father_mother_name || '')
-        setDob(empProfile.dob || '')
-        setGender(empProfile.gender || '')
-        setAlternateNumber(empProfile.alternate_number || '')
-        setCurrentAddress(empProfile.current_address || '')
-        setPermanentAddress(empProfile.permanent_address || '')
-        setCity(empProfile.city || '')
-        setJobCategories(empProfile.job_categories || [])
-        setYearsExperience(empProfile.years_experience || '')
-        setFresherExperienced(empProfile.fresher_experienced || 'Fresher')
-        setTechnicalSkills(empProfile.technical_skills?.join(', ') || '')
-        setCertifications(empProfile.certifications?.join(', ') || '')
-        setLanguages(empProfile.languages || [])
-        setPreferredLocation(empProfile.preferred_location || '')
-        setExpectedSalary(empProfile.expected_salary || '')
-        setNoticePeriod(empProfile.notice_period || '')
-        setShiftPreference(empProfile.shift_preference || '')
-        setDeclarationAccepted(empProfile.declaration_accepted || false)
-      }
-
-      // Fetch Education
-      const { data: eduData } = await supabase
-        .from('education_qualifications')
-        .select('*')
-        .eq('employee_id', user.id)
-      
-      if (eduData && eduData.length > 0) {
-        // Merge with defaults to ensure all fields are present
-        const mergedEdu = [
-            'SSLC/10th', 'PUC/12th', 'Diploma/UG', 'PG/Other'
-        ].map(q => {
-            const found = eduData.find(e => e.qualification === q)
-            return found || { qualification: q, institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' }
-        })
-        setEducation(mergedEdu)
-      }
-
-      // Fetch Experience
-      const { data: expData } = await supabase
-        .from('work_experiences')
-        .select('*')
-        .eq('employee_id', user.id)
-      
-      if (expData && expData.length > 0) {
-        setExperiences(expData)
-      }
-
-    } catch (err) {
-      console.error('Error fetching profile:', err)
-    } finally {
-      setFetching(false)
+    return () => {
+      isMounted = false
     }
-  }
-
+  }, [user, supabase])
   const handleEducationChange = (index: number, field: keyof Education, value: string) => {
     const newEdu = [...education]
     newEdu[index] = { ...newEdu[index], [field]: value }
@@ -260,8 +260,9 @@ export default function EmployeeProfileSetup() {
 
         alert('Profile saved successfully!')
         router.push('/dashboard/employee')
-    } catch (err: any) {
-        setError(err.message)
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to save profile';
+        setError(message)
     } finally {
         setLoading(false)
     }

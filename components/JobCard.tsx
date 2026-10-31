@@ -1,6 +1,5 @@
 'use client'
 
-import { BRAND } from '@/lib/constants'
 import { MapPin, Briefcase, IndianRupee, Users, Calendar, Bookmark } from 'lucide-react'
 import Link from 'next/link'
 import CategoryBadge from './CategoryBadge'

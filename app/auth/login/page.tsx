@@ -29,17 +29,15 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      setError(error.message)
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
     } else {
-      // We are logged in! Now we wait for the AuthContext to fetch the profile.
-      // The useEffect above will trigger once the profile is ready.
       setIsRedirecting(true)
     }
   }
@@ -56,7 +54,7 @@ export default function LoginPage() {
             </h1>
           </Link>
           <h2 className="mt-6 text-2xl font-black text-gray-900 italic">
-             "New Job, New Start."
+            &ldquo;New Job, New Start.&rdquo;
           </h2>
           <p className="mt-2 text-gray-500 font-bold uppercase tracking-widest text-xs">Sign in to your account</p>
         </div>
@@ -113,7 +111,7 @@ export default function LoginPage() {
                 href="/auth/register"
                 className="text-sm font-bold text-gray-400 hover:text-brand-navy transition-colors"
               >
-                Don't have an account? <span className="text-brand-amber">Create one</span>
+                Don&apos;t have an account? <span className="text-brand-amber">Create one</span>
               </Link>
             </div>
           </form>
@@ -125,4 +123,4 @@ export default function LoginPage() {
       </div>
     </div>
   )
-}
+}

@@ -67,7 +67,7 @@ export default function KanbanCard({ application }: { application: Application }
 
       {application.note && (
         <div className="bg-gray-50 p-3 rounded-xl mb-6 italic text-[11px] text-gray-500 border border-gray-100">
-           "{application.note}"
+           &ldquo;{application.note}&rdquo;
         </div>
       )}
 

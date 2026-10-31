@@ -1,9 +1,9 @@
 import Image from 'next/image'
 import { BRAND } from '@/lib/constants'
 
-export default function Logo({ className = "h-8 w-auto", showText = true }: { className?: string, showText?: boolean }) {
+export default function Logo({ className = "", showText = true }: { className?: string, showText?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${className}`}>
       <div className="relative h-10 w-10 shrink-0">
         <Image
           src="/logo.png"

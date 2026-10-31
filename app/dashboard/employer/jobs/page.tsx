@@ -1,9 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { PlusCircle, Briefcase, IndianRupee, MapPin, Users, Edit, ExternalLink } from 'lucide-react'
+import { PlusCircle, Briefcase, MapPin, Edit, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import StatusBadge from '@/components/StatusBadge'
 import CategoryBadge from '@/components/CategoryBadge'
+
+interface EmployerJobItem {
+  id: string
+  title: string
+  location: string
+  status: string
+  category: string
+  pay_amount: number
+  pay_type: string
+  applications?: { count: number }[]
+}
 
 export default async function EmployerJobsPage() {
   const supabase = await createClient()
@@ -16,6 +26,8 @@ export default async function EmployerJobsPage() {
     .select('*, applications(count)')
     .eq('employer_id', user.id)
     .order('created_at', { ascending: false })
+
+  const typedJobs = (jobs || []) as unknown as EmployerJobItem[]
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -30,7 +42,7 @@ export default async function EmployerJobsPage() {
           </Link>
         </div>
 
-        {jobs && jobs.length > 0 ? (
+        {typedJobs.length > 0 ? (
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -45,7 +57,7 @@ export default async function EmployerJobsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {jobs.map((job: any) => (
+                  {typedJobs.map((job) => (
                     <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-8 py-6">
                         <div className="font-black text-gray-900">{job.title}</div>
@@ -87,7 +99,7 @@ export default async function EmployerJobsPage() {
           <div className="bg-white rounded-3xl p-20 text-center border-2 border-dashed border-gray-100">
              <Briefcase className="w-16 h-16 text-gray-200 mx-auto mb-4" />
              <h3 className="text-2xl font-black text-gray-900 mb-2">No jobs posted yet</h3>
-             <p className="text-gray-500 mb-8 max-w-sm mx-auto">Start hiring India's best talent by posting your first job listing today.</p>
+             <p className="text-gray-500 mb-8 max-w-sm mx-auto">Start hiring India&apos;s best talent by posting your first job listing today.</p>
              <Link href="/dashboard/employer/jobs/new" className="btn-accent inline-block">Post Your First Job</Link>
           </div>
         )}

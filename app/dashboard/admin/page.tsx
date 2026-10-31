@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { Users, Building2, Briefcase, TrendingUp, CheckCircle2 } from 'lucide-react'
+import { Users, Building2, Briefcase, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function AdminDashboard() {

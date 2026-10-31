@@ -10,12 +10,10 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragEndEvent,
 } from '@dnd-kit/core'
 import {
-  arrayMove,
-  SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { KANBAN_COLUMNS, BRAND } from '@/lib/constants'
 import KanbanColumn from './KanbanColumn'
@@ -54,40 +52,60 @@ export default function KanbanBoard() {
   )
 
   useEffect(() => {
-    fetchApplications()
-  }, [])
+    let isSubscribed = true
 
-  const fetchApplications = async () => {
-    if (!user) return
-    const { data } = await supabase
-      .from('applications')
-      .select(`
-        *,
-        profiles:employee_id(
-          full_name, 
-          phone,
-          employee_profiles(city, years_experience)
-        ),
-        jobs:job_id(title)
-      `)
-      .in('job_id', 
-        (await supabase
-          .from('jobs')
-          .select('id')
-          .eq('employer_id', user.id)).data?.map((j: any) => j.id) || []
-      )
-    setApplications(data || [])
-    setLoading(false)
-  }
+    async function load() {
+      if (!user) return
 
-  const handleDragEnd = async (event: any) => {
+      const { data: employerJobs } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('employer_id', user.id)
+
+      const jobIds = employerJobs?.map((j) => j.id) || []
+
+      if (jobIds.length === 0) {
+        if (isSubscribed) {
+          setApplications([])
+          setLoading(false)
+        }
+        return
+      }
+
+      const { data } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          profiles:employee_id(
+            full_name, 
+            phone,
+            employee_profiles(city, years_experience)
+          ),
+          jobs:job_id(title)
+        `)
+        .in('job_id', jobIds)
+
+      if (isSubscribed) {
+        setApplications((data || []) as unknown as Application[])
+        setLoading(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      isSubscribed = false
+    }
+  }, [user, supabase])
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
 
     const draggedApp = applications.find(a => a.id === active.id)
     if (!draggedApp) return
 
-    const newStatus = over.id
+    const newStatus = String(over.id)
     await supabase
       .from('applications')
       .update({ status: newStatus })

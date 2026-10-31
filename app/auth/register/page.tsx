@@ -44,7 +44,6 @@ export default function RegisterPage() {
 
     if (data.user) {
       // Redirect to profile setup
-      // Note: The profiles record is now created automatically via database trigger
       router.push(`/profile/${role}`)
     }
     setLoading(false)
@@ -64,7 +63,7 @@ export default function RegisterPage() {
           <h2 className="mt-4 text-xl font-black text-gray-900 uppercase tracking-tight">
             Create Your Account
           </h2>
-          <p className="mt-2 text-gray-400 font-bold uppercase tracking-widest text-xs">Join India's real workforce</p>
+          <p className="mt-2 text-gray-400 font-bold uppercase tracking-widest text-xs">Join India&apos;s real workforce</p>
         </div>
 
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-gray-100">
@@ -185,4 +184,4 @@ export default function RegisterPage() {
       </div>
     </div>
   )
-}
+}

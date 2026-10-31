@@ -20,8 +20,14 @@ interface Application {
   created_at: string
 }
 
+interface ColumnData {
+  id: string
+  label: string
+  color: string
+}
+
 interface ColumnProps {
-  column: any
+  column: ColumnData
   applications: Application[]
 }
 

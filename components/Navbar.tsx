@@ -2,12 +2,11 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
-import { BRAND } from '@/lib/constants'
-import { LogOut, User, Briefcase, LayoutDashboard } from 'lucide-react'
+import { LogOut, LayoutDashboard } from 'lucide-react'
 import Logo from './Logo'
 
 export default function Navbar() {
-  const { user, profile, signOut, dashboardPath } = useAuth()
+  const { user, signOut, dashboardPath } = useAuth()
 
   return (
     <nav className="sticky top-0 z-50 glass border-b border-gray-100">

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import JobCard from '@/components/JobCard'
-import { JOB_CATEGORIES, PAY_TYPES, BRAND } from '@/lib/constants'
+import { JOB_CATEGORIES, PAY_TYPES } from '@/lib/constants'
 import { Search, Filter, MapPin, Briefcase } from 'lucide-react'
 
 export default async function JobsPage(props: {
@@ -14,7 +14,8 @@ export default async function JobsPage(props: {
     .select(`
       *,
       employer_profiles!employer_id (
-        company_name
+        company_name,
+        logo_url
       )
     `)
     .eq('status', 'active')

@@ -1,8 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/constants'
-import { Briefcase, Search, IndianRupee, MapPin, Building2, CheckCircle, XCircle } from 'lucide-react'
+import { Search, IndianRupee, MapPin, Building2, CheckCircle, XCircle } from 'lucide-react'
 import StatusBadge from '@/components/StatusBadge'
 import CategoryBadge from '@/components/CategoryBadge'
+
+interface AdminJobItem {
+  id: string
+  title: string
+  category: string
+  location: string
+  status: string
+  pay_amount: number
+  pay_type: string
+  employer_profiles?: {
+    company_name?: string
+  }
+}
 
 export default async function AdminJobsPage() {
   const supabase = await createClient()
@@ -11,6 +23,8 @@ export default async function AdminJobsPage() {
     .from('jobs')
     .select('*, employer_profiles(company_name)')
     .order('created_at', { ascending: false })
+
+  const typedJobs = (jobs || []) as unknown as AdminJobItem[]
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -42,7 +56,7 @@ export default async function AdminJobsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {jobs?.map((job: any) => (
+                {typedJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6">
                       <div className="font-black text-gray-900">{job.title}</div>
