@@ -18,11 +18,16 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      setError('Enter a valid 10-digit Indian mobile number.')
+      return
+    }
     setLoading(true)
     setError('')
 
     const supabase = createClient()
 
+    try {
     // Sign up with metadata for the database trigger
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -38,7 +43,6 @@ export default function RegisterPage() {
 
     if (signUpError) {
       setError(signUpError.message)
-      setLoading(false)
       return
     }
 
@@ -46,7 +50,11 @@ export default function RegisterPage() {
       // Redirect to profile setup
       router.push(`/profile/${role}`)
     }
-    setLoading(false)
+    } catch {
+      setError('We could not connect to Nava Udyog. Check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -93,11 +101,11 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
+          <form className="space-y-7" onSubmit={handleSubmit}>
+            <div className="space-y-5">
               <div>
                 <label htmlFor="fullName" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Full Name
+                  Full Name <Required />
                 </label>
                 <input
                   id="fullName"
@@ -111,7 +119,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label htmlFor="email" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Email Address
+                  Email Address <Required />
                 </label>
                 <input
                   id="email"
@@ -125,21 +133,24 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label htmlFor="phone" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Phone Number
+                  Phone Number <Required />
                 </label>
                 <input
                   id="phone"
                   type="tel"
                   required
+                  inputMode="numeric"
+                  pattern="[6-9][0-9]{9}"
+                  maxLength={10}
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
-                  placeholder="+91 00000 00000"
+                  placeholder="10-digit Indian mobile number"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
               <div>
                 <label htmlFor="password" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Password
+                  Password <Required />
                 </label>
                 <input
                   id="password"
@@ -162,7 +173,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-accent w-full py-4 text-lg"
+              className="btn-accent mt-2 w-full py-4 text-lg"
             >
               {loading ? 'Creating account...' : 'Join Nava Udyog'}
             </button>
@@ -184,4 +195,8 @@ export default function RegisterPage() {
       </div>
     </div>
   )
+}
+
+function Required() {
+  return <span aria-label="required" className="text-red-600">*</span>
 }

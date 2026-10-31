@@ -5,11 +5,16 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { COMPANY_TYPES, BRAND } from '@/lib/constants'
+import { INDIAN_STATES, INDIAN_CITIES } from '@/lib/indian-locations'
 import { Upload, X } from 'lucide-react'
 
 export default function EmployerProfileSetup() {
   const [companyName, setCompanyName] = useState('')
   const [companyType, setCompanyType] = useState('')
+  const [companyTypeSearch, setCompanyTypeSearch] = useState('')
+  const [otherCompanyType, setOtherCompanyType] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
   const [locations, setLocations] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [description, setDescription] = useState('')
@@ -23,12 +28,15 @@ export default function EmployerProfileSetup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
+    if (!/^[6-9]\d{9}$/.test(contactPhone)) { setError('Enter a valid 10-digit Indian mobile number.'); return }
+    if (!state || !(INDIAN_CITIES[state] || []).includes(city)) { setError('Choose a city from the selected state.'); return }
 
     setLoading(true)
     setError('')
 
+    try {
     const supabase = createClient()
-    let logo_url = null
+    let logo_url: string | undefined
 
     if (logoFile) {
       const fileExt = logoFile.name.split('.').pop()
@@ -40,9 +48,7 @@ export default function EmployerProfileSetup() {
         .upload(filePath, logoFile, { upsert: true })
 
       if (uploadError) {
-        setError('Error uploading logo: ' + uploadError.message)
-        setLoading(false)
-        return
+        throw new Error('Error uploading logo: ' + uploadError.message)
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -58,19 +64,23 @@ export default function EmployerProfileSetup() {
         id: user.id,
         company_name: companyName,
         company_type: companyType,
-        locations: locations.split(',').map(l => l.trim()),
+        other_company_type: otherCompanyType || null,
+        city,
+        state,
+        locations: [`${city}, ${state}`, ...locations.split(',').map(l => l.trim()).filter(Boolean)],
         contact_phone: contactPhone,
         description,
-        logo_url: logo_url || undefined
+        logo_url
       })
 
-    if (upsertError) {
-      setError(upsertError.message)
-    } else {
-      alert('Profile updated successfully!')
-      router.push('/dashboard/employer')
+    if (upsertError) throw upsertError
+    alert('Profile updated successfully!')
+    router.push('/dashboard/employer')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save your employer profile. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,7 +150,7 @@ export default function EmployerProfileSetup() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name
+                Company Name <span className="text-red-600">*</span>
               </label>
               <input 
                 type="text"
@@ -154,8 +164,9 @@ export default function EmployerProfileSetup() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Type
+                Company Type <span className="text-red-600">*</span>
               </label>
+              <input type="search" className="mb-2 w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Search company types" value={companyTypeSearch} onChange={e => setCompanyTypeSearch(e.target.value)} />
               <select 
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -163,10 +174,28 @@ export default function EmployerProfileSetup() {
                 onChange={(e) => setCompanyType(e.target.value)}
               >
                 <option value="">Select type</option>
-                {COMPANY_TYPES.map((type) => (
+                {COMPANY_TYPES.filter(type => type.toLowerCase().includes(companyTypeSearch.toLowerCase())).map((type) => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
+            </div>
+
+            {companyType === 'Other' && <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Company type details</label>
+              <input required value={otherCompanyType} onChange={e => setOtherCompanyType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">State / Union Territory <span className="text-red-600">*</span></label>
+              <select required value={state} onChange={e => setState(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <option value="">Select state / union territory</option>
+                {INDIAN_STATES.map(item => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City <span className="text-red-600">*</span></label>
+              <input required list="employer-cities" value={city} onChange={e => setCity(e.target.value)} placeholder="Search city" className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+              <datalist id="employer-cities">{(INDIAN_CITIES[state] || []).map(item => <option key={item} value={item} />)}</datalist>
             </div>
 
             <div>
@@ -185,11 +214,14 @@ export default function EmployerProfileSetup() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone
+                Contact Phone <span className="text-red-600">*</span>
               </label>
               <input 
                 type="tel"
                 required
+                inputMode="numeric"
+                pattern="[6-9][0-9]{9}"
+                maxLength={10}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 placeholder="Enter contact phone"
                 value={contactPhone}

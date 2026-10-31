@@ -13,7 +13,9 @@ export const EXPERIENCE_OPTIONS = ["No experience", "1-2 years", "3-5 years", "5
 
 export const AVAILABILITY_OPTIONS = ["Immediately", "Within 1 week", "Within 1 month"] as const;
 
-export const COMPANY_TYPES = ["Factory", "Contractor", "Agency", "Direct Employer"] as const;
+export const COMPANY_TYPES = ["Factory", "Contractor", "Agency", "Direct Employer", "Real Estate", "Hotels and Hospitality", "Schools and Educational Institutions", "Hospitals", "Clinics", "Pharmacies", "Manufacturing", "Retail", "IT and Software", "Construction", "Logistics and Transportation", "Food and Beverage", "Agriculture", "Banking and Financial Services", "Other"] as const;
+
+export const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Temporary", "Internship", "Freelance"] as const;
 
 export const APPLICATION_STATUSES = ["applied", "reviewing", "interview", "hired", "rejected"] as const;
 
