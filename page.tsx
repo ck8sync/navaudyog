@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { JOB_CATEGORIES, EXPERIENCE_OPTIONS, PAY_TYPES, AVAILABILITY_OPTIONS, BRAND } from '@/lib/constants'
-import { Plus, Trash2, Save, User, GraduationCap, Briefcase, Sparkles, MapPin, CheckCircle } from 'lucide-react'
+import { JOB_CATEGORIES, EXPERIENCE_OPTIONS, BRAND } from '@/lib/constants'
+import { Plus, Trash2, Save, User, GraduationCap, Briefcase, Sparkles, MapPin } from 'lucide-react'
 
 const LANGUAGES = ['Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Marathi', 'Other']
 
@@ -33,7 +33,7 @@ export default function EmployeeProfileSetup() {
   const [error, setError] = useState('')
   const router = useRouter()
   const { user } = useAuth()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Personal Details
   const [fullName, setFullName] = useState('')
@@ -81,13 +81,7 @@ export default function EmployeeProfileSetup() {
   const [shiftPreference, setShiftPreference] = useState('')
   const [declarationAccepted, setDeclarationAccepted] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      fetchProfileData()
-    }
-  }, [user])
-
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     if (!user) return
     
     try {
@@ -164,7 +158,13 @@ export default function EmployeeProfileSetup() {
     } finally {
       setFetching(false)
     }
-  }
+  }, [user, supabase])
+
+  useEffect(() => {
+    // The asynchronous profile request synchronizes this form with Supabase.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) void fetchProfileData()
+  }, [user, fetchProfileData])
 
   const handleEducationChange = (index: number, field: keyof Education, value: string) => {
     const newEdu = [...education]
@@ -288,8 +288,8 @@ export default function EmployeeProfileSetup() {
 
         alert('Profile saved successfully!')
         router.push('/dashboard/employee')
-    } catch (err: any) {
-        setError(err.message)
+    } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to save profile')
     } finally {
         setLoading(false)
     }

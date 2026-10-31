@@ -44,19 +44,6 @@ export default function HomePage() {
 
   return (
     <div ref={containerRef} className="landing-root">
-      <header>
-        <div className="wrap">
-          <Link className="logo" href="#top">
-            Nava <b>Udyog</b>
-          </Link>
-          <nav>
-            <Link href="/jobs">Browse jobs</Link>
-            <Link href="/auth/login">Log in</Link>
-            <Link className="btn" href="/auth/register">Join now</Link>
-          </nav>
-        </div>
-      </header>
-
       <main id="top">
         {/* Hero */}
         <section className="hero">
@@ -260,13 +247,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer>
-        <div className="wrap">
-          <strong style={{ color: 'var(--ink)' }}>Nava Udyog</strong>
-          <span>New job. New start.</span>
-          <span>Made in India · © 2026 Nava Udyog</span>
-        </div>
-      </footer>
     </div>
   );
 }

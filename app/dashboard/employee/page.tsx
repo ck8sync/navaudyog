@@ -81,7 +81,7 @@ export default async function EmployeeDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-gray-900 mb-2">Namaste, {profile?.full_name}!</h1>
+            <h1 className="text-3xl sm:text-4xl leading-tight font-black text-gray-900 mb-2 break-words">Namaste, {profile?.full_name}!</h1>
             <p className="text-lg text-gray-600">Track your applications and find new opportunities.</p>
           </div>
           <Link href="/profile/employee" className="btn-primary flex items-center py-3 px-6">
@@ -89,7 +89,7 @@ export default async function EmployeeDashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Applications Column */}
           <div className="lg:col-span-2 space-y-8">
             <section>

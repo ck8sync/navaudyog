@@ -372,6 +372,36 @@ npm run start
 
 ---
 
+## Phase 2 Feedback Tracker (FB_001–FB_015)
+
+Implementation is present for the items below. Production build and lint pass, and limited browser smoke checks covered the registration header/footer, mobile-width overflow, and invalid phone rejection. Profile flows, live Supabase writes, CV upload, storage policies, and the full acceptance scenarios still need deployment-environment retesting. No item is marked Completed until its acceptance scenario is verified.
+
+| ID | Feedback | Status |
+|---|---|---|
+| FB_001 | Duplicate Header | Needs Retesting |
+| FB_002 | Alignment and Sizing | Needs Retesting |
+| FB_003 | Loading Indicator | Needs Retesting |
+| FB_004 | Footer | Needs Retesting |
+| FB_005 | Registration Button Padding | Needs Retesting |
+| FB_006 | Input Field Spacing | Needs Retesting |
+| FB_007 | Phone Validation | Needs Retesting |
+| FB_008 | DOB Validation | Needs Retesting |
+| FB_009 | Mandatory Field Indicators | Needs Retesting |
+| FB_010 | Dashboard Font and UI | Needs Retesting |
+| FB_011 | Job Seeker Mandatory Fields | Needs Retesting |
+| FB_012 | Employment Type | Needs Retesting |
+| FB_013 | CV Upload and Extraction | Needs Retesting |
+| FB_014 | Company Type Options | Needs Retesting |
+| FB_015 | Indian City Selection | Needs Retesting |
+
+### Phase 2 deployment notes
+
+- Apply `supabase/migrations/005_feedback_phase2.sql` to the configured Supabase project before deploying the application. The migration adds employee/employer state fields and employment type, validates new mobile/DOB/profile values, and creates the private `employee-cvs` bucket with owner-only access. It has not been run from this development environment.
+- The PDF.js dependency requires Node.js 22.13 or newer; use that runtime for deployment.
+- CV extraction requires a selectable-text PDF. Scanned/image-only PDFs return a manual-entry message; OCR is not included. The extracted suggestions are reviewed before selected values replace profile fields. Delimited education and experience rows are mapped into the structured profile form; other layouts remain editable in the review panel for manual entry.
+- Footer links currently point to the social platforms’ home pages because Nava Udyog account URLs were not present in the repository. Replace them with approved company profile URLs when available.
+- `country-state-city` supplies the state and city choices; city names are stored alongside state names, and the existing `city`/`locations` values remain available for compatibility.
+
 ## 16. Known Limitations
 
 - **Font Pre-fetching in Air-gapped Environments**: Google Fonts via `next/font/google` requires internet connectivity during production builds. For strictly offline/isolated build environments, system font fallbacks defined in `app/globals.css` are utilized.
