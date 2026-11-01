@@ -28,8 +28,8 @@ export const KANBAN_COLUMNS = [
 ] as const;
 
 export const BRAND = {
-  primary: "#1976D2", // Updated to match logo blue
-  accent: "#FF6F00",
+  primary: "#0F766E",
+  accent: "#EF6B4A",
   tagline: "New Job, New Start.",
   name: "Nava Udyog",
 };

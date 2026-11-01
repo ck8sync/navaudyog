@@ -31,7 +31,7 @@ export default function BottomNav() {
   if (links.length === 0) return null
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-gray-100 px-6 py-3 flex justify-between items-center z-50">
+    <div className="site-bottom-nav md:hidden fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex justify-between items-center z-50">
       {links.map((link) => {
         const Icon = link.icon
         const isActive = pathname === link.href
@@ -39,9 +39,7 @@ export default function BottomNav() {
           <Link 
             key={link.href} 
             href={link.href}
-            className={`flex flex-col items-center space-y-1 transition-colors ${
-              isActive ? 'text-brand-navy' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className={`bottom-nav-link flex flex-col items-center space-y-1 transition-colors ${isActive ? 'active' : ''}`}
           >
             <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5px]' : 'stroke-[2px]'}`} />
             <span className="text-[10px] font-bold uppercase tracking-wider">{link.label}</span>

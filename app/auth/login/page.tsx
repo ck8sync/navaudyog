@@ -5,122 +5,100 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { BRAND } from '@/lib/constants'
+import Logo from '@/components/Logo'
+import '@/app/auth/auth.css'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
-  const { user, profile, dashboardPath } = useAuth()
+  const [notice, setNotice] = useState('')
+  const [mode, setMode] = useState<'login' | 'reset'>('login')
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const router = useRouter()
+  const { user, profile, dashboardPath, loading: authLoading } = useAuth()
 
-  // Auto-redirect once the profile and dashboard path are loaded
   useEffect(() => {
-    if (user && profile && dashboardPath && isRedirecting) {
-      router.push(dashboardPath)
+    if (!isRedirecting || authLoading) return
+    if (user && profile && dashboardPath) {
+      router.replace(dashboardPath)
     }
-  }, [user, profile, dashboardPath, isRedirecting, router])
+  }, [user, profile, dashboardPath, authLoading, isRedirecting, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const profileMissing = isRedirecting && !authLoading && Boolean(user) && !profile
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsRedirecting(false)
     setLoading(true)
     setError('')
+    setNotice('')
 
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
-      setError(signInError.message)
-      setLoading(false)
-    } else {
+    try {
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        setError(signInError.message)
+        setLoading(false)
+        return
+      }
       setIsRedirecting(true)
+    } catch {
+      setError('We could not connect to Nava Udyog. Check your connection and try again.')
+      setLoading(false)
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-light opacity-20 blur-[120px] rounded-full z-0" />
-      
-      <div className="max-w-md w-full space-y-8 relative z-10">
-        <div className="text-center">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
-              {BRAND.name.toUpperCase()}
-            </h1>
-          </Link>
-          <h2 className="mt-6 text-2xl font-black text-gray-900 italic">
-            &ldquo;New Job, New Start.&rdquo;
-          </h2>
-          <p className="mt-2 text-gray-500 font-bold uppercase tracking-widest text-xs">Sign in to your account</p>
-        </div>
-        
-        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none text-lg transition-all"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none text-lg transition-all"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+  async function handleResetRequest(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setLoading(true)
+    setError('')
+    setNotice('')
+    try {
+      const supabase = createClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+      if (resetError) {
+        setError(resetError.message)
+      } else {
+        setNotice('If an account exists for that email, we’ve sent a password reset link. Check your inbox and spam folder.')
+      }
+    } catch {
+      setError('We could not connect to Nava Udyog. Check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100">
-                {error}
-              </div>
-            )}
+  function showResetForm() {
+    setMode('reset')
+    setError('')
+    setNotice('')
+  }
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-4 text-lg"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-
-            <div className="text-center pt-4">
-              <Link
-                href="/auth/register"
-                className="text-sm font-bold text-gray-400 hover:text-brand-navy transition-colors"
-              >
-                Don&apos;t have an account? <span className="text-brand-amber">Create one</span>
-              </Link>
-            </div>
-          </form>
-        </div>
-        
-        <p className="text-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-           🇮🇳 Made in India
-        </p>
+  return <div className="auth-page">
+    <div className="auth-orbit" aria-hidden="true" />
+    <div className="auth-shell">
+      <div className="auth-heading">
+        <Link href="/" className="auth-brand" aria-label="Nava Udyog home"><Logo /></Link>
+        <p className="auth-kicker">{mode === 'login' ? 'Welcome back' : 'Account recovery'}</p>
+        <h1>{mode === 'login' ? 'New job. New start.' : 'Reset your password.'}</h1>
+        <p className="auth-description">{mode === 'login' ? 'Sign in to continue to your Nava Udyog account.' : 'Enter your account email and we’ll send you a secure reset link.'}</p>
       </div>
+
+      <div className="auth-card">
+        <form className="auth-form" onSubmit={mode === 'login' ? handleSubmit : handleResetRequest}>
+          <div className="auth-field"><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required placeholder="name@example.com" value={email} onChange={(event) => setEmail(event.target.value)} /></div>
+          {mode === 'login' && <div className="auth-field"><div className="auth-password-row"><label htmlFor="password">Password</label><button type="button" onClick={showResetForm}>Forgot password?</button></div><input id="password" type="password" autoComplete="current-password" required placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} /></div>}
+          {(error || profileMissing) && <div className="auth-alert" role="alert">{profileMissing ? 'Your account is signed in, but its worker or employer profile is missing. Please contact support.' : error}</div>}
+          {notice && <div className="auth-notice" role="status">{notice}</div>}
+          <button type="submit" disabled={loading} className="auth-submit">{loading ? (mode === 'login' ? 'Signing in…' : 'Sending link…') : (mode === 'login' ? 'Sign in' : 'Send reset link')} <span aria-hidden="true">→</span></button>
+          {mode === 'login' ? <p className="auth-switch">Don&apos;t have an account? <Link href="/auth/register">Create one</Link></p> : <p className="auth-switch"><button type="button" onClick={() => { setMode('login'); setError(''); setNotice('') }}>Back to sign in</button></p>}
+        </form>
+      </div>
+      <p className="auth-footnote">A better way to find work and workers.</p>
     </div>
-  )
+  </div>
 }

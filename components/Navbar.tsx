@@ -9,7 +9,7 @@ export default function Navbar() {
   const { user, signOut, dashboardPath } = useAuth()
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-gray-100">
+    <nav className="site-nav sticky top-0 z-50 border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -19,19 +19,19 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/jobs" className="text-sm font-semibold text-gray-600 hover:text-brand-navy transition-colors">
-              Browse Jobs
+            <Link href="/jobs" className="nav-link text-sm font-semibold transition-colors">
+              Browse jobs
             </Link>
             
             {user ? (
               <div className="flex items-center space-x-6">
-                <Link href={dashboardPath || '/'} className="flex items-center space-x-1 text-sm font-semibold text-gray-600 hover:text-brand-navy">
+                <Link href={dashboardPath || '/'} className="nav-link flex items-center space-x-1 text-sm font-semibold">
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Dashboard</span>
                 </Link>
                 <button 
                   onClick={() => signOut()}
-                  className="flex items-center space-x-1 text-sm font-semibold text-red-600 hover:text-red-700 transition-colors"
+                  className="nav-link nav-logout flex items-center space-x-1 text-sm font-semibold transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
@@ -39,18 +39,18 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link href="/auth/login" className="text-sm font-semibold text-gray-600 hover:text-brand-navy">
-                  Login
+                <Link href="/auth/login" className="nav-link text-sm font-semibold">
+                  Log in
                 </Link>
-                <Link href="/auth/register" className="btn-primary py-2 px-5 text-sm">
-                  Join Now
+                <Link href="/auth/register" className="site-join py-2 px-5 text-sm">
+                  Join now <span aria-hidden="true">â†’</span>
                 </Link>
               </div>
             )}
           </div>
           
           <div className="flex items-center md:hidden">
-             <span className="text-xs font-bold text-gray-400">🇮🇳 Made in India</span>
+             <span className="nav-mobile-note">Made for every kind of work</span>
           </div>
         </div>
       </div>

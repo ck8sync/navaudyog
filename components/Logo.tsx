@@ -1,24 +1,21 @@
 import Image from 'next/image'
-import { BRAND } from '@/lib/constants'
 
-export default function Logo({ className = "", showText = true }: { className?: string, showText?: boolean }) {
+type LogoProps = {
+  className?: string
+  showText?: boolean
+}
+
+export default function Logo({ className = '', showText = true }: LogoProps) {
+  const lightSrc = showText ? '/navaudyog-logo-light.svg' : '/navaudyog-mark.svg'
+  const darkSrc = showText ? '/navaudyog-logo-dark.svg' : '/navaudyog-mark-dark.svg'
+  const imageWidth = showText ? 150 : 46
+  const imageHeight = showText ? 35 : 32
+  const alt = showText ? 'Nava Udyog' : 'Nava Udyog mark'
+
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <div className="relative h-10 w-10 shrink-0">
-        <Image
-          src="/logo.png"
-          alt="Nava Udyog Logo"
-          fill
-          sizes="40px"
-          className="object-contain"
-          priority
-        />
-      </div>
-      {showText && (
-        <span className="text-xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
-          {BRAND.name.toUpperCase()}
-        </span>
-      )}
-    </div>
+    <span className={`site-logo${showText ? '' : ' site-logo-mark'} ${className}`}>
+      <Image className="logo-light" src={lightSrc} width={imageWidth} height={imageHeight} alt={alt} />
+      <Image className="logo-dark" src={darkSrc} width={imageWidth} height={imageHeight} alt={alt} />
+    </span>
   )
 }

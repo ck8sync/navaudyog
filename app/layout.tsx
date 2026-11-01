@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import LayoutShell from "@/LayoutShell";
-import Footer from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Nava Udyog - New Job, New Start.",
   description: "India's blue and grey collar job portal",
+  icons: {
+    icon: "/navaudyog-app-icon.svg",
+    apple: "/navaudyog-app-icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -31,7 +34,6 @@ export default function RootLayout({
         >
           <AuthProvider>
             <LayoutShell>{children}</LayoutShell>
-            <Footer />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

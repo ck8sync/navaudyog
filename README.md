@@ -241,11 +241,13 @@ The database schema is organized into versioned migrations inside `supabase/migr
 | `002_employee_details.sql` | Adds extended profile attributes to `employee_profiles` and introduces `education_qualifications` and `work_experiences` tables. |
 | `003_applicant_rls.sql` | Defines RLS policies permitting employers to inspect applicant details and educational background for their jobs. |
 | `004_employer_logos.sql` | Adds `logo_url` to `employer_profiles` and creates the `employer-logos` storage bucket with upload/read RLS policies. |
+| `005_feedback_phase2.sql` | Adds extended profile fields, input validation, and the private employee CV storage bucket. |
+| `006_public_platform_stats.sql` | Adds a public aggregate-only RPC for accurate active job, worker, employer, and application totals. |
 
 ### Executing Migrations
 
 **Option A (Supabase SQL Editor — Recommended):**
-Open each migration file in sequential order (`001` → `004`) in your Supabase Dashboard SQL Editor and execute them.
+Open each migration file in sequential order (`001` → `006`) in your Supabase Dashboard SQL Editor and execute them. Migration `006` is required to display live homepage totals.
 
 **Option B (Automated Migration Script):**
 If you have configured `SUPABASE_SERVICE_ROLE_KEY`:

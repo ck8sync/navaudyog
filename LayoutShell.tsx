@@ -2,15 +2,23 @@
 
 import Navbar from '@/components/Navbar'
 import BottomNav from '@/components/BottomNav'
+import { usePathname } from 'next/navigation'
+import Footer from '@/components/Footer'
+import NavigationProgress from '@/components/NavigationProgress'
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const isAuthPage = pathname.startsWith('/auth/')
+
   return (
     <>
-      <Navbar />
-      <main className="flex-grow pb-20 md:pb-0">
+      <NavigationProgress />
+      {!isAuthPage && <Navbar />}
+      <main className={`app-main flex-grow ${isAuthPage ? '' : 'pb-20 md:pb-0'}`}>
         {children}
       </main>
-      <BottomNav />
+      {!isAuthPage && <BottomNav />}
+      {!isAuthPage && <Footer />}
     </>
   )
 }

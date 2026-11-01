@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   const path = url.pathname
 
   // Public routes
-  const publicRoutes = ['/', '/jobs', '/auth/login', '/auth/register']
+  const publicRoutes = ['/', '/jobs', '/auth/login', '/auth/register', '/auth/reset-password']
   if (publicRoutes.includes(path) || path.startsWith('/jobs/')) {
     return response
   }

@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  --font-sans: Manrope, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
   --font-heading: var(--font-geist-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -47,31 +47,31 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Brand Colors */
-  --color-brand-navy: #1976D2;
-  --color-brand-amber: #FF6F00;
-  --color-brand-light: #E3F2FD;
+  /* Nava Udyog brand colors */
+  --color-brand-navy: #0F766E;
+  --color-brand-amber: #EF6B4A;
+  --color-brand-light: #E3F2EF;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: #FDFBF7;
+  --foreground: #1F2A28;
+  --card: #FFFFFF;
+  --card-foreground: #1F2A28;
+  --popover: #FFFFFF;
+  --popover-foreground: #1F2A28;
+  --primary: #0F766E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E3F2EF;
+  --secondary-foreground: #1F2A28;
+  --muted: #F3F0E9;
+  --muted-foreground: #5B6B67;
+  --accent: #EF6B4A;
+  --accent-foreground: #1F2A28;
+  --destructive: #C33D32;
+  --border: #E8E3D8;
+  --input: #E8E3D8;
+  --ring: #0F766E;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -89,24 +89,24 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #0F1715;
+  --foreground: #EAF2F0;
+  --card: #17211F;
+  --card-foreground: #EAF2F0;
+  --popover: #17211F;
+  --popover-foreground: #EAF2F0;
+  --primary: #5EEAD4;
+  --primary-foreground: #0F1715;
+  --secondary: #16302C;
+  --secondary-foreground: #EAF2F0;
+  --muted: #17211F;
+  --muted-foreground: #9DB2AD;
+  --accent: #EF6B4A;
+  --accent-foreground: #1F2A28;
+  --destructive: #F87171;
+  --border: #26352F;
+  --input: #26352F;
+  --ring: #5EEAD4;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -128,11 +128,27 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: Manrope, "Helvetica Neue", Arial, sans-serif;
   }
   html {
     @apply font-sans;
   }
 }
+
+/* Apply the Nava Udyog palette to legacy utility-based screens as well. */
+.app-main { background:var(--background); color:var(--foreground); font-family:Manrope,"Helvetica Neue",Arial,sans-serif; }
+.app-main [class~="bg-gray-50"] { background-color:var(--background)!important; }
+.app-main [class~="bg-gray-100"] { background-color:var(--muted)!important; }
+.app-main [class~="bg-white"] { background-color:var(--card)!important; }
+.app-main [class~="text-gray-900"],.app-main [class~="text-gray-800"] { color:var(--foreground)!important; }
+.app-main [class~="text-gray-700"],.app-main [class~="text-gray-600"],.app-main [class~="text-gray-500"],.app-main [class~="text-gray-400"] { color:var(--muted-foreground)!important; }
+.app-main [class~="border-gray-50"],.app-main [class~="border-gray-100"],.app-main [class~="border-gray-200"],.app-main [class~="border-gray-300"] { border-color:var(--border)!important; }
+.app-main [class~="bg-blue-50"] { background-color:var(--secondary)!important; }
+.app-main [class~="text-blue-700"] { color:var(--primary)!important; }
+.app-main [class~="border-blue-200"] { border-color:var(--border)!important; }
+.dark .app-main [class~="bg-red-50"] { background-color:#351F1B!important; }
+.dark .app-main [class~="text-red-600"] { color:#FFB6A4!important; }
+.dark .app-main [class~="border-red-100"] { border-color:#703E35!important; }
 
 @layer components {
   .glass {
@@ -141,22 +157,22 @@
   
   .btn-primary {
     @apply px-7 py-3.5 rounded-xl font-bold transition-all duration-300 transform active:scale-95 inline-flex items-center justify-center shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer;
-    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    background: linear-gradient(135deg, #0F766E 0%, #0B5D57 100%);
     color: white;
   }
   
   .btn-primary:hover {
-    box-shadow: 0 10px 25px -5px rgba(25, 118, 210, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(15, 118, 110, 0.35);
   }
 
   .btn-accent {
     @apply px-7 py-3.5 rounded-xl font-bold transition-all duration-300 transform active:scale-95 inline-flex items-center justify-center shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer;
-    background: linear-gradient(135deg, #FF6F00 0%, #F57C00 100%);
-    color: white;
+    background: linear-gradient(135deg, #EF6B4A 0%, #E35F3F 100%);
+    color: #1F2A28;
   }
 
   .btn-accent:hover {
-    box-shadow: 0 10px 25px -5px rgba(255, 111, 0, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(239, 107, 74, 0.35);
   }
 
   .btn-secondary {
@@ -172,6 +188,37 @@
     background-size: 24px 24px;
   }
 }
+
+/* Shared Nava Udyog brand chrome. */
+.site-nav {
+  --bg:#FDFBF7; --sf:#fff; --ink:#1F2A28; --mut:#5B6B67; --ln:#E8E3D8;
+  --pr:#0F766E; --prh:#0B5D57; --on:#fff; --soft:#E3F2EF; --co:#EF6B4A; --cd:#1F2A28;
+  height:68px; background:var(--sf); border-color:var(--ln); box-shadow:0 2px 10px -10px rgba(31,42,40,.3);
+  font-family:Manrope,"Helvetica Neue",Arial,sans-serif;
+}
+.dark .site-nav { --bg:#0F1715; --sf:#17211F; --ink:#EAF2F0; --mut:#9DB2AD; --ln:#26352F; --pr:#5EEAD4; --prh:#99F6E4; --on:#0F1715; --soft:#16302C; --co:#EF6B4A; --cd:#1F2A28; }
+.site-logo { display:inline-flex; align-items:center; line-height:0; flex:none; }
+.site-logo img { display:block; width:150px; height:auto; }
+.site-logo .logo-dark { display:none; }
+.dark .site-logo .logo-light { display:none; }
+.dark .site-logo .logo-dark { display:block; }
+.site-logo.site-logo-mark { padding:10px; }
+.site-logo.site-logo-mark img { width:46px; }
+.site-nav .max-w-7xl > .flex { height:68px; }
+.site-nav .nav-link { color:var(--mut); transition:color .2s,background .2s; }
+.site-nav .nav-link:hover { color:var(--ink); }
+.site-nav .nav-logout { color:#B84C35; }
+.site-nav .site-join { display:inline-flex; align-items:center; gap:8px; border-radius:11px; background:var(--pr); color:var(--on); font-family:Manrope,"Helvetica Neue",Arial,sans-serif; font-weight:700; transition:background .2s,transform .2s; }
+.site-nav .site-join:hover { background:var(--prh); transform:translateY(-1px); }
+.site-footer { border-color:#E8E3D8; background:#FDFBF7; color:#5B6B67; font-family:Manrope,"Helvetica Neue",Arial,sans-serif; }
+.dark .site-footer { border-color:#26352F; background:#0F1715; color:#9DB2AD; }
+.site-footer .footer-brand { color:#1F2A28; }.dark .site-footer .footer-brand { color:#EAF2F0; }
+.site-footer a:hover { color:#0F766E; }.dark .site-footer a:hover { color:#5EEAD4; }
+.site-bottom-nav { background:#fff; border-color:#E8E3D8; box-shadow:0 -8px 24px -22px rgba(31,42,40,.45); }
+.dark .site-bottom-nav { background:#17211F; border-color:#26352F; }
+.site-bottom-nav .bottom-nav-link { color:#5B6B67; }.site-bottom-nav .bottom-nav-link.active { color:#0F766E; }
+.dark .site-bottom-nav .bottom-nav-link { color:#9DB2AD; }.dark .site-bottom-nav .bottom-nav-link.active { color:#5EEAD4; }
+@media(max-width:767px) { .site-nav .max-w-7xl { height:100%; }.site-nav .nav-mobile-note { color:#5B6B67;font-size:10px;font-weight:700; }.dark .site-nav .nav-mobile-note { color:#9DB2AD; } }
 
 @keyframes float {
   0% { transform: translateY(0px); }

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { BRAND } from '@/lib/constants'
+import Logo from '@/components/Logo'
+import '@/app/auth/auth.css'
 
 export default function RegisterPage() {
   const [role, setRole] = useState<'employee' | 'employer'>('employee')
@@ -14,42 +15,39 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    setNotice('')
     if (!/^[6-9]\d{9}$/.test(phone)) {
       setError('Enter a valid 10-digit Indian mobile number.')
       return
     }
     setLoading(true)
-    setError('')
-
-    const supabase = createClient()
 
     try {
-    // Sign up with metadata for the database trigger
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role,
-          full_name: fullName,
-          phone,
-        }
+      const supabase = createClient()
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { role, full_name: fullName, phone } },
+      })
+      if (signUpError) {
+        setError(signUpError.message)
+        return
       }
-    })
-
-    if (signUpError) {
-      setError(signUpError.message)
-      return
-    }
-
-    if (data.user) {
-      // Redirect to profile setup
-      router.push(`/profile/${role}`)
-    }
+      if (data.session) {
+        router.push(`/profile/${role}`)
+        return
+      }
+      if (data.user) {
+        setNotice('Check your email for a confirmation link. Once confirmed, sign in to finish setting up your profile.')
+      } else {
+        setError('We could not create your account. Please try again.')
+      }
     } catch {
       setError('We could not connect to Nava Udyog. Check your connection and try again.')
     } finally {
@@ -57,146 +55,33 @@ export default function RegisterPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-0 right-1/2 translate-x-1/2 w-[600px] h-[600px] bg-brand-light opacity-20 blur-[120px] rounded-full z-0" />
-      
-      <div className="max-w-md w-full space-y-8 relative z-10">
-        <div className="text-center">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-black tracking-tighter" style={{ color: BRAND.primary }}>
-              {BRAND.name.toUpperCase()}
-            </h1>
-          </Link>
-          <h2 className="mt-4 text-xl font-black text-gray-900 uppercase tracking-tight">
-            Create Your Account
-          </h2>
-          <p className="mt-2 text-gray-400 font-bold uppercase tracking-widest text-xs">Join India&apos;s real workforce</p>
-        </div>
-
-        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-gray-100">
-          {/* Role Tabs */}
-          <div className="flex p-1 bg-gray-50 rounded-2xl mb-8">
-            <button
-              type="button"
-              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                role === 'employee'
-                  ? 'bg-white text-brand-navy shadow-sm border border-gray-100'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-              onClick={() => setRole('employee')}
-            >
-              Job Seeker
-            </button>
-            <button
-              type="button"
-              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                role === 'employer'
-                  ? 'bg-white text-brand-navy shadow-sm border border-gray-100'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-              onClick={() => setRole('employer')}
-            >
-              Employer
-            </button>
-          </div>
-
-          <form className="space-y-7" onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="fullName" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Full Name <Required />
-                </label>
-                <input
-                  id="fullName"
-                  type="text"
-                  required
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
-                  placeholder="Enter your name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Email Address <Required />
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Phone Number <Required />
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  required
-                  inputMode="numeric"
-                  pattern="[6-9][0-9]{9}"
-                  maxLength={10}
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
-                  placeholder="10-digit Indian mobile number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  Password <Required />
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy outline-none transition-all"
-                  placeholder="Create a password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-accent mt-2 w-full py-4 text-lg"
-            >
-              {loading ? 'Creating account...' : 'Join Nava Udyog'}
-            </button>
-
-            <div className="text-center pt-4">
-              <Link
-                href="/auth/login"
-                className="text-sm font-bold text-gray-400 hover:text-brand-navy transition-colors"
-              >
-                Already have an account? <span className="text-brand-navy">Sign in</span>
-              </Link>
-            </div>
-          </form>
-        </div>
-        
-        <p className="text-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-           🇮🇳 New Job, New Start.
-        </p>
+  return <div className="auth-page auth-page-register">
+    <div className="auth-orbit" aria-hidden="true" />
+    <div className="auth-shell auth-shell-register">
+      <div className="auth-heading">
+        <Link href="/" className="auth-brand" aria-label="Nava Udyog home"><Logo /></Link>
+        <p className="auth-kicker">Start with what you do</p>
+        <h1>Create your account.</h1>
+        <p className="auth-description">Join India&apos;s workforce network as a job seeker or employer.</p>
       </div>
-    </div>
-  )
-}
 
-function Required() {
-  return <span aria-label="required" className="text-red-600">*</span>
+      <div className="auth-card">
+        <div className="auth-role" role="group" aria-label="Choose account type">
+          <button type="button" aria-pressed={role === 'employee'} className={role === 'employee' ? 'selected' : ''} onClick={() => setRole('employee')}>Job seeker</button>
+          <button type="button" aria-pressed={role === 'employer'} className={role === 'employer' ? 'selected' : ''} onClick={() => setRole('employer')}>Employer</button>
+        </div>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-field"><label htmlFor="fullName">Full name <span>*</span></label><input id="fullName" type="text" autoComplete="name" required placeholder="Enter your name" value={fullName} onChange={(event) => setFullName(event.target.value)} /></div>
+          <div className="auth-field"><label htmlFor="email">Email address <span>*</span></label><input id="email" type="email" autoComplete="email" required placeholder="name@example.com" value={email} onChange={(event) => setEmail(event.target.value)} /></div>
+          <div className="auth-field"><label htmlFor="phone">Phone number <span>*</span></label><input id="phone" type="tel" autoComplete="tel-national" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} required placeholder="10-digit Indian mobile number" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))} /><small>Use a valid Indian mobile number.</small></div>
+          <div className="auth-field"><label htmlFor="password">Password <span>*</span></label><input id="password" type="password" autoComplete="new-password" minLength={8} required placeholder="At least 8 characters" value={password} onChange={(event) => setPassword(event.target.value)} /></div>
+          {error && <div className="auth-alert" role="alert">{error}</div>}
+          {notice && <div className="auth-notice" role="status">{notice}</div>}
+          <button type="submit" disabled={loading} className="auth-submit auth-submit-coral">{loading ? 'Creating account…' : 'Create account'} <span aria-hidden="true">→</span></button>
+          <p className="auth-switch">Already have an account? <Link href="/auth/login">Sign in</Link></p>
+        </form>
+      </div>
+      <p className="auth-footnote">Your skills are your profile. No resume needed.</p>
+    </div>
+  </div>
 }
