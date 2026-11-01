@@ -4,6 +4,7 @@ import { MapPin, Users, Calendar, Building2, ChevronLeft, CheckCircle2 } from 'l
 import Link from 'next/link'
 import CategoryBadge from '@/components/CategoryBadge'
 import StatusBadge from '@/components/StatusBadge'
+import ShareJobButton from '@/components/ShareJobButton'
 
 export default async function JobDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -69,7 +70,8 @@ export default async function JobDetailPage(props: { params: Promise<{ id: strin
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-6 text-sm font-bold">
+            <div className="flex flex-wrap items-center gap-4 text-sm font-bold">
+              <ShareJobButton title={job.title} />
                <div className="flex items-center bg-white/10 px-4 py-2 rounded-full">
                   <MapPin className="w-4 h-4 mr-2" /> {job.location}
                </div>
