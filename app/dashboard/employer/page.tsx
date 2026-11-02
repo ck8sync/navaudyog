@@ -8,25 +8,30 @@ export default async function EmployerDashboard() {
 
   if (!user) return null
 
-  // Fetch stats
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, status')
-    .eq('employer_id', user.id)
+  const [
+    { data: jobs },
+    { data: profile },
+  ] = await Promise.all([
+    supabase
+      .from('jobs')
+      .select('id, status')
+      .eq('employer_id', user.id),
+    supabase
+      .from('employer_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+  ])
 
   const activeJobsCount = jobs?.filter(j => j.status === 'active').length || 0
   const totalJobsCount = jobs?.length || 0
 
-  const { count: totalApplicants } = await supabase
-    .from('applications')
-    .select('*', { count: 'exact', head: true })
-    .in('job_id', jobs?.map(j => j.id) || [])
-
-  const { data: profile } = await supabase
-    .from('employer_profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const { count: totalApplicants } = jobs?.length
+    ? await supabase
+        .from('applications')
+        .select('*', { count: 'exact', head: true })
+        .in('job_id', jobs.map(j => j.id))
+    : { count: 0 }
 
   const stats = [
     { title: 'Active Jobs', value: activeJobsCount, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },

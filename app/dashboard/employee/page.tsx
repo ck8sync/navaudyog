@@ -44,33 +44,33 @@ export default async function EmployeeDashboard() {
 
   if (!user) return null
 
-  // Fetch applications
-  const { data: applications } = await supabase
-    .from('applications')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
-    .eq('employee_id', user.id)
-    .order('created_at', { ascending: false })
-
-  // Fetch saved jobs
-  const { data: savedJobs } = await supabase
-    .from('saved_jobs')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
-    .eq('employee_id', user.id)
-
-  // Fetch profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // Fetch recommended jobs (recent active jobs)
-  const { data: recommendedJobs } = await supabase
-    .from('jobs')
-    .select('*, employer_profiles(company_name, logo_url)')
-    .eq('status', 'active')
-    .limit(3)
-    .order('created_at', { ascending: false })
+  const [
+    { data: applications },
+    { data: savedJobs },
+    { data: profile },
+    { data: recommendedJobs },
+  ] = await Promise.all([
+    supabase
+      .from('applications')
+      .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
+      .eq('employee_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('saved_jobs')
+      .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
+      .eq('employee_id', user.id),
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('jobs')
+      .select('*, employer_profiles(company_name, logo_url)')
+      .eq('status', 'active')
+      .limit(3)
+      .order('created_at', { ascending: false }),
+  ])
 
   const typedApps = (applications || []) as unknown as ApplicationWithJob[]
   const typedSaved = (savedJobs || []) as unknown as SavedJobItem[]

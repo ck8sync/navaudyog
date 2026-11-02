@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = useMemo(() => createClient(), [])
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const loadUserProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -44,51 +44,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         code: error.code,
         details: error.details,
       })
-
       if (error.code === 'PGRST205') {
-        console.error(
-          "Supabase PostgREST error PGRST205: 'public.profiles' table not found. Run the SQL migration to create the table."
-        )
+        console.error("Supabase PostgREST error PGRST205: 'public.profiles' table not found. Run the SQL migration to create the table.")
       }
-
       setProfile(null)
-    } else {
-      setProfile(data)
+      return null
     }
+
+    setProfile(data)
+    return data as Profile
   }, [supabase])
 
   useEffect(() => {
     // Get initial session
+    let isMounted = true
+    let profileRequest = 0
+
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (!isMounted) return
+      if (error) console.error('Error restoring auth session:', error.message)
+
       setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      }
       setLoading(false)
+      if (session?.user) {
+        const request = ++profileRequest
+        void loadUserProfile(session.user.id).then((profile) => {
+          if (isMounted && request === profileRequest) setProfile(profile)
+        })
+      }
     }
 
-    getSession()
+    void getSession()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
+        const request = ++profileRequest
         setUser(session?.user ?? null)
         if (session?.user) {
-          await fetchProfile(session.user.id)
+          setLoading(true)
+          void loadUserProfile(session.user.id).then((profile) => {
+            if (isMounted && request === profileRequest) {
+              setProfile(profile)
+              setLoading(false)
+            }
+          })
         } else {
           setProfile(null)
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [supabase, fetchProfile])
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [supabase, loadUserProfile])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Error signing out:', error.message)
+      throw error
+    }
+    setUser(null)
+    setProfile(null)
+    router.replace('/')
     router.refresh()
   }
 
