@@ -2,7 +2,7 @@
 
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
-import KanbanCard from './KanbanCard'
+import KanbanCard from './app/dashboard/employer/applicants/KanbanCard'
 
 interface Application {
   id: string
