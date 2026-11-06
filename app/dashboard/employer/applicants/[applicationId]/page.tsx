@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Phone, MessageSquare, MapPin, Briefcase, ChevronLeft, User, Calendar, GraduationCap, Sparkles, CircleDollarSign } from 'lucide-react'
 import Link from 'next/link'
-import StatusBadge from '@/components/StatusBadge'
+import ApplicationStatusSelect from './ApplicationStatusSelect'
 
 interface EducationItem {
   id: string
@@ -96,7 +96,7 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                              {emp?.city || 'Location not specified'}
                           </div>
                        </div>
-                       <StatusBadge status={app.status} className="bg-white/10 text-white border-white/20" />
+                       <ApplicationStatusSelect applicationId={app.id} initialStatus={app.status} />
                     </div>
 
                     <div className="flex flex-wrap gap-4">

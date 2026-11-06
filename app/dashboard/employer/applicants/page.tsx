@@ -41,6 +41,7 @@ interface Application {
 export default function KanbanBoard() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
+  const [statusError, setStatusError] = useState('')
   const { user } = useAuth()
   const supabase = createClient()
 
@@ -105,13 +106,25 @@ export default function KanbanBoard() {
     const draggedApp = applications.find(a => a.id === active.id)
     if (!draggedApp) return
 
-    const newStatus = String(over.id)
-    await supabase
+    const targetColumn = KANBAN_COLUMNS.find(column => column.id === String(over.id))
+    const targetApplication = applications.find(application => application.id === String(over.id))
+    const newStatus = targetColumn?.id || targetApplication?.status
+    if (!newStatus || newStatus === draggedApp.status) return
+
+    setStatusError('')
+    const { data, error } = await supabase
       .from('applications')
       .update({ status: newStatus })
       .eq('id', draggedApp.id)
+      .select('id')
+      .maybeSingle()
 
-    setApplications(applications.map(app =>
+    if (error || !data) {
+      setStatusError(error?.message || 'Could not update the application status. Please try again.')
+      return
+    }
+
+    setApplications(current => current.map(app =>
       app.id === draggedApp.id ? { ...app, status: newStatus } : app
     ))
   }
@@ -123,6 +136,7 @@ export default function KanbanBoard() {
       <h1 className="text-3xl font-bold mb-8" style={{ color: BRAND.primary }}>
         Applicants Kanban
       </h1>
+      {statusError && <p role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{statusError}</p>}
 
       <DndContext
         sensors={sensors}
