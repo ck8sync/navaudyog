@@ -68,6 +68,7 @@ export default function EmployeeProfileSetup() {
   const [jobCategories, setJobCategories] = useState<string[]>([])
   const [yearsExperience, setYearsExperience] = useState('')
   const [fresherExperienced, setFresherExperienced] = useState('Fresher')
+  const [isSearchable, setIsSearchable] = useState(false)
   
   // Education & Experience
   const [education, setEducation] = useState<Education[]>([
@@ -128,6 +129,7 @@ export default function EmployeeProfileSetup() {
           setJobCategories(empProfile.job_categories || [])
           setYearsExperience(empProfile.years_experience || '')
           setFresherExperienced(empProfile.fresher_experienced || 'Fresher')
+          setIsSearchable(empProfile.is_searchable || false)
           setTechnicalSkills(empProfile.technical_skills?.join(', ') || '')
           setCertifications(empProfile.certifications?.join(', ') || '')
           setLanguages(empProfile.languages || [])
@@ -252,6 +254,7 @@ export default function EmployeeProfileSetup() {
                 job_categories: jobCategories,
                 years_experience: yearsExperience,
                 fresher_experienced: fresherExperienced,
+                is_searchable: isSearchable,
                 technical_skills: technicalSkills.split(',').map(s => s.trim()).filter(s => s),
                 certifications: certifications.split(',').map(c => c.trim()).filter(c => c),
                 languages,
@@ -575,6 +578,21 @@ export default function EmployeeProfileSetup() {
                 </div>
             </div>
           </Section>
+
+          <section className="rounded-3xl border border-brand-navy/10 bg-brand-navy/[0.03] p-6 md:p-8">
+            <label className="flex items-start gap-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isSearchable}
+                onChange={event => setIsSearchable(event.target.checked)}
+                className="mt-1 h-5 w-5 rounded border-gray-300 text-brand-navy focus:ring-brand-navy"
+              />
+              <span>
+                <span className="block font-black text-gray-900">Show my profile in the employer candidate directory</span>
+                <span className="mt-1 block text-sm text-gray-600">Employers can find your name, city, experience, job categories, and skills. Your phone number and address stay private. You can turn this off any time.</span>
+              </span>
+            </label>
+          </section>
 
           {/* 7. Declaration */}
           <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">

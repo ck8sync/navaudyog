@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Briefcase, Users, PlusCircle, ChevronRight, TrendingUp, CheckCircle2 } from 'lucide-react'
+import { Briefcase, Users, PlusCircle, ChevronRight, TrendingUp, CheckCircle2, Search } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function EmployerDashboard() {
@@ -91,6 +91,14 @@ export default async function EmployerDashboard() {
                     <p className="text-sm text-gray-500 mb-4">Edit or close your active job postings.</p>
                     <span className="text-brand-amber font-bold flex items-center text-sm">
                        Manage Jobs <ChevronRight className="w-4 h-4 ml-1" />
+                    </span>
+                 </Link>
+                 <Link href="/dashboard/employer/candidates" className="card-premium group p-8">
+                    <Search className="w-10 h-10 text-brand-navy mb-4 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-xl font-black mb-1">Find Job Seekers</h3>
+                    <p className="text-sm text-gray-500 mb-4">Search candidates by experience, skills, and trade.</p>
+                    <span className="text-brand-navy font-bold flex items-center text-sm">
+                       Browse Candidate Directory <ChevronRight className="w-4 h-4 ml-1" />
                     </span>
                  </Link>
               </div>
