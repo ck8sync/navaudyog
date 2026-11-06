@@ -26,20 +26,34 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
   const params = await props.params
   const supabase = await createClient()
 
-  const { data: app } = await supabase
+  const { data: app, error: applicationError } = await supabase
     .from('applications')
-    .select(`
-      *,
-      profiles(
-        *,
-        employee_profiles(*)
-      ),
-      jobs(title)
-    `)
+    .select('*')
     .eq('id', params.applicationId)
     .single()
 
-  if (!app) notFound()
+  if (applicationError || !app) notFound()
+
+  // Read each profile table separately instead of relying on a nested PostgREST
+  // relationship. This keeps applicant details available when the relationship
+  // embed is missing/ambiguous in the deployed schema cache.
+  const [profileResult, employeeProfileResult, jobResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', app.employee_id)
+      .maybeSingle(),
+    supabase
+      .from('employee_profiles')
+      .select('*')
+      .eq('id', app.employee_id)
+      .maybeSingle(),
+    supabase
+      .from('jobs')
+      .select('title')
+      .eq('id', app.job_id)
+      .maybeSingle(),
+  ])
 
   // Fetch detailed info
   const { data: education } = await supabase
@@ -57,10 +71,10 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
   const typedEdu = (education || []) as unknown as EducationItem[]
   const typedExp = (experiences || []) as unknown as ExperienceItem[]
 
-  const phone = app.profiles?.phone?.replace(/\D/g, '') || ''
-  const candidateName = app.profiles?.full_name || 'Candidate'
+  const phone = profileResult.data?.phone?.replace(/\D/g, '') || ''
+  const candidateName = profileResult.data?.full_name || 'Candidate'
   const whatsappUrl = phone ? `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi ${candidateName}, I saw your application on Nava Udyog...`)}` : '#'
-  const emp = app.profiles?.employee_profiles
+  const emp = employeeProfileResult.data
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12">
@@ -115,7 +129,7 @@ export default async function ApplicantDetailPage(props: { params: Promise<{ app
                           <InfoItem label="Experience" value={`${emp?.years_experience || '0'} (${emp?.fresher_experienced || 'Fresher'})`} />
                           <InfoItem label="Availability" value={emp?.notice_period || emp?.availability} />
                           <InfoItem label="Expected Salary" value={emp?.expected_salary} />
-                          <InfoItem label="Applied For" value={app.jobs?.title} />
+                          <InfoItem label="Applied For" value={jobResult.data?.title} />
                        </div>
                     </section>
 
