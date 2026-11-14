@@ -1,232 +1,654 @@
-import { createClient } from '@/lib/supabase/server'
-import { Briefcase, Bookmark, User, Clock, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
-import StatusBadge from '@/components/StatusBadge'
+'use client'
 
-// Always fetch fresh data so candidates see status changes made by employers.
-export const dynamic = 'force-dynamic'
+import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/context/AuthContext'
+import { JOB_CATEGORIES, EXPERIENCE_OPTIONS, EMPLOYMENT_TYPES, BRAND } from '@/lib/constants'
+import { Plus, Trash2, Save, User, GraduationCap, Briefcase, Sparkles, MapPin } from 'lucide-react'
+import { INDIAN_STATES, INDIAN_CITIES } from '@/lib/indian-locations'
 
-interface ApplicationWithJob {
-  id: string
-  job_id: string
-  status: string
-  created_at: string
-  jobs?: {
-    title: string
-    employer_profiles?: {
-      company_name: string
-      logo_url?: string
+interface CvExtracted {
+  fullName: string
+  email: string
+  phone: string
+  skills: string[]
+  education: string[]
+  experience: string[]
+  certifications: string[]
+}
+
+const LANGUAGES = ['Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Bengali', 'Marathi', 'Other']
+
+interface Education {
+  id?: string
+  qualification: string
+  institution_name: string
+  board_university: string
+  year_of_passing: string
+  percentage_cgpa: string
+}
+
+interface Experience {
+  id?: string
+  company_name: string
+  designation: string
+  duration: string
+  salary_drawn: string
+  reason_for_leaving: string
+}
+
+export default function EmployeeProfileSetup() {
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+  const [error, setError] = useState('')
+  const [cvUploading, setCvUploading] = useState(false)
+  const [cvProgress, setCvProgress] = useState(0)
+  const [cvError, setCvError] = useState('')
+  const [cvExtracted, setCvExtracted] = useState<CvExtracted | null>(null)
+  const router = useRouter()
+  const { user } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  // Personal Details
+  const [fullName, setFullName] = useState('')
+  const [fatherMotherName, setFatherMotherName] = useState('')
+  const [dob, setDob] = useState('')
+  const [gender, setGender] = useState('')
+  const [phone, setPhone] = useState('')
+  const [alternateNumber, setAlternateNumber] = useState('')
+  const [email, setEmail] = useState('')
+  const [currentAddress, setCurrentAddress] = useState('')
+  const [permanentAddress, setPermanentAddress] = useState('')
+
+  // Profile Specific
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [employmentType, setEmploymentType] = useState('')
+  const [jobCategories, setJobCategories] = useState<string[]>([])
+  const [yearsExperience, setYearsExperience] = useState('')
+  const [fresherExperienced, setFresherExperienced] = useState('Fresher')
+  
+  // Education & Experience
+  const [education, setEducation] = useState<Education[]>([
+    { qualification: 'SSLC/10th', institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' },
+    { qualification: 'PUC/12th', institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' },
+    { qualification: 'Diploma/UG', institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' },
+    { qualification: 'PG/Other', institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' }
+  ])
+  const [experiences, setExperiences] = useState<Experience[]>([])
+
+  // Skills & Preferences
+  const [technicalSkills, setTechnicalSkills] = useState('')
+  const [languages, setLanguages] = useState<string[]>([])
+  const [certifications, setCertifications] = useState('')
+  const [preferredLocation, setPreferredLocation] = useState('')
+  const [expectedSalary, setExpectedSalary] = useState('')
+  const [noticePeriod, setNoticePeriod] = useState('')
+  const [shiftPreference, setShiftPreference] = useState('')
+  const [declarationAccepted, setDeclarationAccepted] = useState(false)
+
+
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadProfile() {
+      if (!user) return
+      
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile && isMounted) {
+          setFullName(profile.full_name || '')
+          setPhone(profile.phone || '')
+          setEmail(user.email || '')
+        }
+
+        const { data: empProfile } = await supabase
+          .from('employee_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (empProfile && isMounted) {
+          setFatherMotherName(empProfile.father_mother_name || '')
+          setDob(empProfile.dob || '')
+          setGender(empProfile.gender || '')
+          setAlternateNumber(empProfile.alternate_number || '')
+          setCurrentAddress(empProfile.current_address || '')
+          setPermanentAddress(empProfile.permanent_address || '')
+          setCity(empProfile.city || '')
+          setState(empProfile.state || '')
+          setEmploymentType(empProfile.employment_type || '')
+          setJobCategories(empProfile.job_categories || [])
+          setYearsExperience(empProfile.years_experience || '')
+          setFresherExperienced(empProfile.fresher_experienced || 'Fresher')
+          setTechnicalSkills(empProfile.technical_skills?.join(', ') || '')
+          setCertifications(empProfile.certifications?.join(', ') || '')
+          setLanguages(empProfile.languages || [])
+          setPreferredLocation(empProfile.preferred_location || '')
+          setExpectedSalary(empProfile.expected_salary || '')
+          setNoticePeriod(empProfile.notice_period || '')
+          setShiftPreference(empProfile.shift_preference || '')
+          setDeclarationAccepted(empProfile.declaration_accepted || false)
+        }
+
+        const { data: eduData } = await supabase
+          .from('education_qualifications')
+          .select('*')
+          .eq('employee_id', user.id)
+        
+        if (eduData && eduData.length > 0 && isMounted) {
+          const mergedEdu = [
+              'SSLC/10th', 'PUC/12th', 'Diploma/UG', 'PG/Other'
+          ].map(q => {
+              const found = eduData.find(e => e.qualification === q)
+              return found || { qualification: q, institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' }
+          })
+          setEducation(mergedEdu)
+        }
+
+        const { data: expData } = await supabase
+          .from('work_experiences')
+          .select('*')
+          .eq('employee_id', user.id)
+        
+        if (expData && expData.length > 0 && isMounted) {
+          setExperiences(expData)
+        }
+
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      } finally {
+        if (isMounted) setFetching(false)
+      }
+    }
+
+    loadProfile()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user, supabase])
+  const handleEducationChange = (index: number, field: keyof Education, value: string) => {
+    const newEdu = [...education]
+    newEdu[index] = { ...newEdu[index], [field]: value }
+    setEducation(newEdu)
+  }
+
+  const addExperience = () => {
+    setExperiences([...experiences, { company_name: '', designation: '', duration: '', salary_drawn: '', reason_for_leaving: '' }])
+  }
+
+  const removeExperience = (index: number) => {
+    setExperiences(experiences.filter((_, i) => i !== index))
+  }
+
+  const handleExperienceChange = (index: number, field: keyof Experience, value: string) => {
+    const newExp = [...experiences]
+    newExp[index] = { ...newExp[index], [field]: value }
+    setExperiences(newExp)
+  }
+
+  const handleCategoryChange = (category: string, checked: boolean) => {
+    if (checked) {
+      setJobCategories([...jobCategories, category])
+    } else {
+      setJobCategories(jobCategories.filter(c => c !== category))
     }
   }
-}
 
-interface SavedJobItem {
-  id: string
-  job_id: string
-  jobs?: {
-    title: string
-    employer_profiles?: {
-      company_name: string
-      logo_url?: string
+  const handleLanguageChange = (language: string, checked: boolean) => {
+    if (checked) {
+      setLanguages([...languages, language])
+    } else {
+      setLanguages(languages.filter(l => l !== language))
     }
   }
-}
 
-interface RecommendedJobItem {
-  id: string
-  title: string
-  employer_profiles?: {
-    company_name: string
-    logo_url?: string
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    if (!declarationAccepted) {
+        setError('Please accept the declaration to proceed.')
+        return
+    }
+    if (!/^[6-9]\d{9}$/.test(phone)) { setError('Enter a valid 10-digit Indian mobile number.'); return }
+    if (alternateNumber && !/^[6-9]\d{9}$/.test(alternateNumber)) { setError('Enter a valid 10-digit alternate mobile number.'); return }
+    if (!dob || dob > new Date().toISOString().slice(0, 10)) { setError('Date of birth cannot be in the future.'); return }
+    if (!(INDIAN_CITIES[state] || []).includes(city)) { setError('Choose a city from the selected state.'); return }
+    if (!fullName.trim() || !fatherMotherName.trim() || !gender || !currentAddress.trim() || !permanentAddress.trim() || !yearsExperience || !state || !city) { setError('Complete all required fields marked with *.'); return }
+
+    setLoading(true)
+    setError('')
+
+    try {
+        // 1. Update Profiles table (Full Name)
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ full_name: fullName, phone })
+            .eq('id', user.id)
+        if (profileError) throw profileError
+
+        // 2. Update Employee Profiles
+        const { error: empError } = await supabase
+            .from('employee_profiles')
+            .upsert({
+                id: user.id,
+                city,
+                state,
+                employment_type: employmentType,
+                father_mother_name: fatherMotherName,
+                dob,
+                gender,
+                alternate_number: alternateNumber,
+                current_address: currentAddress,
+                permanent_address: permanentAddress,
+                job_categories: jobCategories,
+                years_experience: yearsExperience,
+                fresher_experienced: fresherExperienced,
+                technical_skills: technicalSkills.split(',').map(s => s.trim()).filter(s => s),
+                certifications: certifications.split(',').map(c => c.trim()).filter(c => c),
+                languages,
+                preferred_location: preferredLocation,
+                expected_salary: expectedSalary,
+                notice_period: noticePeriod,
+                shift_preference: shiftPreference,
+                declaration_accepted: declarationAccepted,
+                pay_preference: expectedSalary
+            })
+
+        if (empError) throw empError
+
+        // 3. Update Education (Delete then Insert)
+        const { error: eduDeleteError } = await supabase.from('education_qualifications').delete().eq('employee_id', user.id)
+        if (eduDeleteError) throw eduDeleteError
+        const eduToInsert = education
+            .filter(e => e.institution_name) // Only insert if they filled something
+            .map(e => ({ ...e, employee_id: user.id }))
+        
+        if (eduToInsert.length > 0) {
+            const { error: eduInsertError } = await supabase.from('education_qualifications').insert(eduToInsert)
+            if (eduInsertError) throw eduInsertError
+        }
+
+        // 4. Update Experience (Delete then Insert)
+        const { error: expDeleteError } = await supabase.from('work_experiences').delete().eq('employee_id', user.id)
+        if (expDeleteError) throw expDeleteError
+        const expToInsert = experiences
+            .filter(e => e.company_name)
+            .map(e => ({ ...e, employee_id: user.id }))
+        
+        if (expToInsert.length > 0) {
+            const { error: expInsertError } = await supabase.from('work_experiences').insert(expToInsert)
+            if (expInsertError) throw expInsertError
+        }
+
+        alert('Profile saved successfully!')
+        router.push('/dashboard/employee')
+    } catch (err: unknown) {
+        // Supabase errors are plain objects with a `message`, not Error instances.
+        const message = err instanceof Error
+          ? err.message
+          : (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string')
+            ? err.message
+            : 'Failed to save profile';
+        setError(message)
+    } finally {
+        setLoading(false)
+    }
   }
-}
 
-export default async function EmployeeDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const uploadCv = (file?: File) => {
+    if (!file) return
+    setCvError('')
+    setCvExtracted(null)
+    if (file.type !== 'application/pdf' || !file.name.toLowerCase().endsWith('.pdf')) { setCvError('Choose a PDF file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setCvError('CV must be no larger than 5 MB.'); return }
+    setCvUploading(true)
+    setCvProgress(0)
+    const form = new FormData()
+    form.append('file', file)
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', '/api/employee/cv')
+    xhr.upload.onprogress = event => { if (event.lengthComputable) setCvProgress(Math.round(event.loaded / event.total * 100)) }
+    xhr.onload = () => {
+      setCvUploading(false)
+      let result: { error?: string; extracted?: CvExtracted }
+      try { result = JSON.parse(xhr.responseText || '{}') } catch { setCvError('The server returned an unreadable response. Please try again or enter your details manually.'); return }
+      if (xhr.status < 200 || xhr.status >= 300) { setCvError(result.error || 'CV processing failed. Enter your details manually.'); return }
+      if (!result.extracted) { setCvError('No profile fields could be extracted. Please enter your details manually.'); return }
+      setCvExtracted(result.extracted)
+    }
+    xhr.onerror = () => { setCvUploading(false); setCvError('Upload failed. Please try again or enter your details manually.') }
+    xhr.send(form)
+  }
 
-  if (!user) return null
+  const applyCvDetails = () => {
+    if (!cvExtracted) return
+    const parsedEducation = cvExtracted.education.map(line => line.split(/\s*[|;,]\s*/).map(value => value.trim())).filter(parts => parts.length >= 2).map(parts => ({ qualification: parts[0], institution_name: parts[1], board_university: parts[2] || '', year_of_passing: parts[3] || '', percentage_cgpa: parts[4] || '' }))
+    const parsedExperience = cvExtracted.experience.map(line => line.split(/\s*[|;,]\s*/).map(value => value.trim())).filter(parts => parts.length >= 3).map(parts => ({ company_name: parts[0], designation: parts[1], duration: parts[2], salary_drawn: parts[3] || '', reason_for_leaving: parts[4] || '' }))
+    const replacesExisting = (cvExtracted.fullName && fullName) || (cvExtracted.phone && phone) || (cvExtracted.email && email) || (cvExtracted.skills.length && technicalSkills) || (cvExtracted.certifications.length && certifications) || (parsedEducation.length && education.some(item => item.institution_name)) || (parsedExperience.length && experiences.some(item => item.company_name))
+    if (replacesExisting && !window.confirm('Replace matching information already in your profile with these reviewed CV details?')) return
+    if (cvExtracted.fullName) setFullName(cvExtracted.fullName)
+    if (cvExtracted.phone) setPhone(cvExtracted.phone)
+    if (cvExtracted.email && !email) setEmail(cvExtracted.email)
+    if (cvExtracted.skills.length) setTechnicalSkills(cvExtracted.skills.join(', '))
+    if (cvExtracted.certifications.length) setCertifications(cvExtracted.certifications.join(', '))
+    if (parsedEducation.length) setEducation(current => parsedEducation.map((item, index) => ({ ...(current[index] || { qualification: '', institution_name: '', board_university: '', year_of_passing: '', percentage_cgpa: '' }), ...item })))
+    if (parsedExperience.length) setExperiences(parsedExperience)
+    setCvError('Reviewed CV details applied. Check every field and complete any missing values before saving.')
+  }
 
-  // Fetch applications
-  const { data: applications } = await supabase
-    .from('applications')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
-    .eq('employee_id', user.id)
-    .order('created_at', { ascending: false })
-
-  // Fetch saved jobs
-  const { data: savedJobs } = await supabase
-    .from('saved_jobs')
-    .select('*, jobs(*, employer_profiles!employer_id(company_name, logo_url))')
-    .eq('employee_id', user.id)
-
-  // Fetch profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // Fetch recommended jobs (recent active jobs)
-  const { data: recommendedJobs } = await supabase
-    .from('jobs')
-    .select('*, employer_profiles(company_name, logo_url)')
-    .eq('status', 'active')
-    .limit(3)
-    .order('created_at', { ascending: false })
-
-  const typedApps = (applications || []) as unknown as ApplicationWithJob[]
-  const typedSaved = (savedJobs || []) as unknown as SavedJobItem[]
-  const typedRecs = (recommendedJobs || []) as unknown as RecommendedJobItem[]
+  if (fetching) return <div className="min-h-screen flex items-center justify-center">Loading your profile...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-          <div>
-            <h1 className="text-3xl sm:text-4xl leading-tight font-black text-gray-900 mb-2 break-words">Namaste, {profile?.full_name}!</h1>
-            <p className="text-lg text-gray-600">Track your applications and find new opportunities.</p>
-          </div>
-          <Link href="/profile/employee" className="btn-primary flex items-center py-3 px-6">
-            <User className="w-5 h-5 mr-2" /> Edit Profile
-          </Link>
+    <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-3">Complete Your Profile</h1>
+            <p className="text-lg text-gray-500 font-medium">Help us find the best opportunities for you by providing your details.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Applications Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-2xl font-black text-gray-900 flex items-center">
-                   <Briefcase className="w-6 h-6 mr-3 text-brand-navy" />
-                   My Applications
-                 </h2>
-                 <span className="bg-brand-light text-brand-navy px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
-                    {typedApps.length} TOTAL
-                 </span>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <section className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6 sm:p-8" aria-labelledby="cv-upload-heading">
+            <h2 id="cv-upload-heading" className="text-lg font-black text-gray-900">Upload your CV (PDF)</h2>
+            <p className="mt-1 text-sm text-gray-600">We’ll read selectable text, keep the file private, and show suggestions for your review before applying them.</p>
+            <input type="file" accept="application/pdf,.pdf" disabled={cvUploading} onChange={e => uploadCv(e.target.files?.[0])} className="mt-4 block w-full text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-brand-navy file:px-4 file:py-2 file:font-semibold file:text-white" />
+            {cvUploading && <div className="mt-4" role="status"><div className="mb-1 flex justify-between text-xs text-gray-600"><span>Uploading and extracting text…</span><span>{cvProgress}%</span></div><progress className="w-full accent-blue-700" max="100" value={cvProgress} /></div>}
+            {cvError && <p className="mt-3 text-sm text-blue-900" role="status">{cvError}</p>}
+            {cvExtracted && <div className="mt-5 space-y-4 rounded-2xl bg-white p-5">
+              <p className="font-bold text-gray-900">Review extracted details</p>
+              <p className="text-xs text-gray-500">Edit these suggestions before applying. Existing profile information requires your confirmation.</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="text-xs font-bold text-gray-600">Name<input className="input-field mt-1" value={cvExtracted.fullName} onChange={e => setCvExtracted({ ...cvExtracted, fullName: e.target.value })} /></label>
+                <label className="text-xs font-bold text-gray-600">Phone<input className="input-field mt-1" value={cvExtracted.phone} onChange={e => setCvExtracted({ ...cvExtracted, phone: e.target.value })} /></label>
+                <label className="text-xs font-bold text-gray-600">Email found<input className="input-field mt-1" value={cvExtracted.email} onChange={e => setCvExtracted({ ...cvExtracted, email: e.target.value })} /></label>
+                <label className="text-xs font-bold text-gray-600">Skills (one per line)<textarea className="input-field mt-1" rows={3} value={cvExtracted.skills.join('\n')} onChange={e => setCvExtracted({ ...cvExtracted, skills: e.target.value.split('\n').filter(Boolean) })} /></label>
+                <label className="text-xs font-bold text-gray-600">Education (review and enter in Education below)<textarea className="input-field mt-1" rows={3} value={cvExtracted.education.join('\n')} onChange={e => setCvExtracted({ ...cvExtracted, education: e.target.value.split('\n').filter(Boolean) })} /></label>
+                <label className="text-xs font-bold text-gray-600">Work experience (review and enter below)<textarea className="input-field mt-1" rows={3} value={cvExtracted.experience.join('\n')} onChange={e => setCvExtracted({ ...cvExtracted, experience: e.target.value.split('\n').filter(Boolean) })} /></label>
+                <label className="text-xs font-bold text-gray-600">Certifications (one per line)<textarea className="input-field mt-1" rows={3} value={cvExtracted.certifications.join('\n')} onChange={e => setCvExtracted({ ...cvExtracted, certifications: e.target.value.split('\n').filter(Boolean) })} /></label>
               </div>
-
-              {typedApps.length > 0 ? (
-                <div className="space-y-4">
-                  {typedApps.map((app) => (
-                    <div key={app.id} className="card-premium flex items-center justify-between p-6">
-                      <div className="flex items-center gap-4">
-                        {app.jobs?.employer_profiles?.logo_url ? (
-                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 flex-shrink-0 shadow-sm">
-                            <img 
-                              src={app.jobs.employer_profiles.logo_url} 
-                              alt={app.jobs.employer_profiles.company_name}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-brand-navy">
-                             <Briefcase className="w-6 h-6" />
-                          </div>
-                        )}
-                        <div>
-                           <h3 className="font-black text-gray-900">{app.jobs?.title}</h3>
-                           <p className="text-sm text-brand-amber font-bold">{app.jobs?.employer_profiles?.company_name}</p>
-                           <div className="flex items-center text-xs text-gray-400 mt-1">
-                              <Clock className="w-3 h-3 mr-1" /> Applied {new Date(app.created_at).toLocaleDateString()}
-                           </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-3">
-                         <StatusBadge status={app.status} />
-                         <Link href={`/jobs/${app.job_id}`} className="text-xs font-bold text-gray-400 hover:text-brand-navy flex items-center">
-                            View Job <ChevronRight className="w-3 h-3 ml-1" />
-                         </Link>
-                      </div>
-                    </div>
-                  ))}
+              <button type="button" onClick={applyCvDetails} className="btn-primary">Apply reviewed details</button>
+            </div>}
+          </section>
+          {/* 1. Personal Details */}
+          <Section title="Personal Details" icon={<User className="w-5 h-5" />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Full Name" required>
+                    <input type="text" required value={fullName} onChange={e => setFullName(e.target.value)} className="input-field" placeholder="Your full name" />
+                </Field>
+                <Field label="Father's / Mother's Name" required>
+                    <input type="text" required value={fatherMotherName} onChange={e => setFatherMotherName(e.target.value)} className="input-field" placeholder="Name" />
+                </Field>
+                <Field label="Date of Birth" required>
+                    <input type="date" max={new Date().toISOString().slice(0, 10)} required value={dob} onChange={e => setDob(e.target.value)} className="input-field" />
+                </Field>
+                <Field label="Gender" required>
+                    <select required value={gender} onChange={e => setGender(e.target.value)} className="input-field">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </Field>
+                <Field label="Mobile Number" required>
+                    <input type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} required value={phone} onChange={e => setPhone(e.target.value)} className="input-field" placeholder="10-digit number" />
+                </Field>
+                <Field label="State" required>
+                    <select required value={state} onChange={e => { setState(e.target.value); setCity('') }} className="input-field">
+                        <option value="">Select state / union territory</option>
+                        {INDIAN_STATES.map(item => <option key={item} value={item}>{item}</option>)}
+                    </select>
+                </Field>
+                <Field label="City" required>
+                    <input required list="employee-cities" value={city} onChange={e => setCity(e.target.value)} className="input-field" placeholder="Search city" />
+                    <datalist id="employee-cities">{(INDIAN_CITIES[state] || []).map(item => <option key={item} value={item} />)}</datalist>
+                </Field>
+                <Field label="Alternate Number">
+                    <input type="tel" value={alternateNumber} onChange={e => setAlternateNumber(e.target.value)} className="input-field" placeholder="Optional" />
+                </Field>
+                <div className="md:col-span-2">
+                    <Field label="Email ID">
+                        <input type="email" disabled value={email} className="input-field bg-gray-50" />
+                    </Field>
                 </div>
-              ) : (
-                <div className="bg-white rounded-2xl p-12 text-center border border-gray-100">
-                   <p className="text-gray-500 mb-6">You haven&apos;t applied to any jobs yet.</p>
-                   <Link href="/jobs" className="btn-primary inline-block">Browse Jobs Now</Link>
+                <div className="md:col-span-2">
+                    <Field label="Current Address" required>
+                        <textarea required value={currentAddress} onChange={e => setCurrentAddress(e.target.value)} className="input-field min-h-[80px]" placeholder="Street, Area, City, Pincode" />
+                    </Field>
                 </div>
-              )}
-            </section>
-          </div>
-
-          {/* Sidebar: Saved Jobs & Stats */}
-          <div className="space-y-8">
-            <section className="bg-brand-navy rounded-3xl p-8 text-white">
-               <h3 className="text-xl font-black mb-6">Job Search Stats</h3>
-               <div className="space-y-6">
-                  <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                     <span className="text-brand-light/70 font-bold">Applied</span>
-                     <span className="text-2xl font-black">{typedApps.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                     <span className="text-brand-light/70 font-bold">Interviews</span>
-                     <span className="text-2xl font-black text-brand-amber">
-                        {typedApps.filter((a) => a.status === 'interview').length}
-                     </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <span className="text-brand-light/70 font-bold">Saved Jobs</span>
-                     <span className="text-2xl font-black">{typedSaved.length}</span>
-                  </div>
-               </div>
-            </section>
-
-            <section>
-               <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center">
-                  <Bookmark className="w-5 h-5 mr-3 text-brand-amber" />
-                  Saved Jobs
-               </h3>
-               {typedSaved.length > 0 ? (
-                 <div className="space-y-4">
-                    {typedSaved.map((saved) => (
-                      <Link key={saved.id} href={`/jobs/${saved.job_id}`} className="block group">
-                        <div className="bg-white p-4 rounded-2xl border border-gray-100 group-hover:border-brand-navy transition-all shadow-sm group-hover:shadow-md">
-                           <h4 className="font-black text-gray-900 group-hover:text-brand-navy transition-colors">{saved.jobs?.title}</h4>
-                           <p className="text-xs text-gray-500 font-bold uppercase tracking-tight">{saved.jobs?.employer_profiles?.company_name}</p>
+                <div className="md:col-span-2">
+                <Field label="Permanent Address" required>
+                        <div className="flex items-center mb-2">
+                            <input type="checkbox" id="sameAddress" className="mr-2" onChange={(e) => { if(e.target.checked) setPermanentAddress(currentAddress) }} />
+                            <label htmlFor="sameAddress" className="text-xs text-gray-500 font-bold uppercase tracking-wider">Same as current address</label>
                         </div>
-                      </Link>
+                        <textarea required value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} className="input-field min-h-[80px]" placeholder="Street, Area, City, Pincode" />
+                    </Field>
+                </div>
+            </div>
+          </Section> Section
+
+          {/* 2. Educational Qualification */}
+          <Section title="Educational Qualification" icon={<GraduationCap className="w-5 h-5" />}>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr className="border-b border-gray-100">
+                            <th className="py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Qualification</th>
+                            <th className="py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Institution</th>
+                            <th className="py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Board/Univ</th>
+                            <th className="py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Year</th>
+                            <th className="py-4 text-xs font-black text-gray-400 uppercase tracking-widest">% / CGPA</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {education.map((edu, idx) => (
+                            <tr key={idx}>
+                                <td className="py-4 pr-4 font-bold text-gray-700">{edu.qualification}</td>
+                                <td className="py-4 pr-4">
+                                    <input type="text" value={edu.institution_name} onChange={e => handleEducationChange(idx, 'institution_name', e.target.value)} className="input-field py-1 text-sm" placeholder="Name" />
+                                </td>
+                                <td className="py-4 pr-4">
+                                    <input type="text" value={edu.board_university} onChange={e => handleEducationChange(idx, 'board_university', e.target.value)} className="input-field py-1 text-sm" placeholder="Board" />
+                                </td>
+                                <td className="py-4 pr-4">
+                                    <input type="text" value={edu.year_of_passing} onChange={e => handleEducationChange(idx, 'year_of_passing', e.target.value)} className="input-field py-1 text-sm w-20" placeholder="YYYY" />
+                                </td>
+                                <td className="py-4">
+                                    <input type="text" value={edu.percentage_cgpa} onChange={e => handleEducationChange(idx, 'percentage_cgpa', e.target.value)} className="input-field py-1 text-sm w-20" placeholder="%" />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+          </Section>
+
+          {/* 3. Work Experience */}
+          <Section title="Work Experience" icon={<Briefcase className="w-5 h-5" />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <Field label="Total Experience" required>
+                    <select required value={yearsExperience} onChange={e => setYearsExperience(e.target.value)} className="input-field">
+                        <option value="">Select experience</option>
+                        {EXPERIENCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                </Field>
+                <Field label="Employment Type">
+                    <select value={employmentType} onChange={e => setEmploymentType(e.target.value)} className="input-field">
+                        <option value="">Select employment type</option>
+                        {EMPLOYMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                </Field>
+                <Field label="Status">
+                    <select required value={fresherExperienced} onChange={e => setFresherExperienced(e.target.value)} className="input-field">
+                        <option value="Fresher">Fresher</option>
+                        <option value="Experienced">Experienced</option>
+                    </select>
+                </Field>
+            </div>
+
+            {fresherExperienced === 'Experienced' && (
+                <div className="space-y-6">
+                    {experiences.map((exp, idx) => (
+                        <div key={idx} className="relative p-6 border border-gray-100 rounded-2xl bg-gray-50/50">
+                            <button type="button" onClick={() => removeExperience(idx)} className="absolute top-4 right-4 text-red-400 hover:text-red-600">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Company Name">
+                                    <input type="text" value={exp.company_name} onChange={e => handleExperienceChange(idx, 'company_name', e.target.value)} className="input-field" placeholder="Name" />
+                                </Field>
+                                <Field label="Designation">
+                                    <input type="text" value={exp.designation} onChange={e => handleExperienceChange(idx, 'designation', e.target.value)} className="input-field" placeholder="Role" />
+                                </Field>
+                                <Field label="Duration">
+                                    <input type="text" value={exp.duration} onChange={e => handleExperienceChange(idx, 'duration', e.target.value)} className="input-field" placeholder="e.g. 2 Years" />
+                                </Field>
+                                <Field label="Salary Drawn">
+                                    <input type="text" value={exp.salary_drawn} onChange={e => handleExperienceChange(idx, 'salary_drawn', e.target.value)} className="input-field" placeholder="Amount" />
+                                </Field>
+                                <div className="md:col-span-2">
+                                    <Field label="Reason for Leaving">
+                                        <input type="text" value={exp.reason_for_leaving} onChange={e => handleExperienceChange(idx, 'reason_for_leaving', e.target.value)} className="input-field" placeholder="Optional" />
+                                    </Field>
+                                </div>
+                            </div>
+                        </div>
                     ))}
-                 </div>
-               ) : (
-                 <p className="text-sm text-gray-500 italic bg-white p-6 rounded-2xl border border-gray-100">No saved jobs yet.</p>
-               )}
-            </section>
+                    <button type="button" onClick={addExperience} className="flex items-center gap-2 text-brand-navy font-black text-sm uppercase tracking-widest hover:text-brand-navy/80">
+                        <Plus className="w-4 h-4" /> Add Experience Entry
+                    </button>
+                </div>
+            )}
+          </Section>
 
-            <section className="bg-white p-8 rounded-3xl border border-gray-100">
-               <h3 className="text-lg font-black text-gray-900 mb-6">Explore Jobs</h3>
-               <div className="space-y-4">
-                  {typedRecs.map((job) => (
-                    <Link key={job.id} href={`/jobs/${job.id}`} className="block group">
-                      <div className="flex items-center gap-3">
-                        {job.employer_profiles?.logo_url ? (
-                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-gray-100 p-1 shrink-0">
-                            <img 
-                              src={job.employer_profiles.logo_url} 
-                              alt={job.employer_profiles.company_name}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                             <Briefcase className="w-5 h-5 text-brand-navy" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                           <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-brand-navy transition-colors">{job.title}</h4>
-                           <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{job.employer_profiles?.company_name}</p>
+          {/* 4. Skills & Certifications */}
+          <Section title="Skills & Certifications" icon={<Sparkles className="w-5 h-5" />}>
+            <div className="space-y-6">
+                <Field label="Technical Skills (Comma separated)">
+                    <input type="text" value={technicalSkills} onChange={e => setTechnicalSkills(e.target.value)} className="input-field" placeholder="e.g. Driving, Plastering, Welding" />
+                </Field>
+                <Field label="Languages Known">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {LANGUAGES.map(lang => (
+                            <label key={lang} className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${languages.includes(lang) ? 'bg-brand-navy border-brand-navy text-white' : 'bg-white border-gray-100 text-gray-500'}`}>
+                                <input type="checkbox" className="hidden" checked={languages.includes(lang)} onChange={e => handleLanguageChange(lang, e.target.checked)} />
+                                <span className="text-xs font-black uppercase tracking-tight">{lang}</span>
+                            </label>
+                        ))}
+                    </div>
+                </Field>
+                <Field label="Certifications (Comma separated)">
+                    <input type="text" value={certifications} onChange={e => setCertifications(e.target.value)} className="input-field" placeholder="e.g. ITI, Driving License, First Aid" />
+                </Field>
+            </div>
+          </Section>
+
+          {/* 5. Job Preferences */}
+          <Section title="Job Preferences" icon={<MapPin className="w-5 h-5" />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Preferred Location">
+                    <input type="text" value={preferredLocation} onChange={e => setPreferredLocation(e.target.value)} className="input-field" placeholder="City Name" />
+                </Field>
+                <Field label="Expected Salary">
+                    <input type="text" value={expectedSalary} onChange={e => setExpectedSalary(e.target.value)} className="input-field" placeholder="Per month / Daily" />
+                </Field>
+                <Field label="Notice Period">
+                    <input type="text" value={noticePeriod} onChange={e => setNoticePeriod(e.target.value)} className="input-field" placeholder="e.g. Immediately, 15 Days" />
+                </Field>
+                <Field label="Shift Preference">
+                    <select value={shiftPreference} onChange={e => setShiftPreference(e.target.value)} className="input-field">
+                        <option value="Any">Any Shift</option>
+                        <option value="Day">Day Shift</option>
+                        <option value="Night">Night Shift</option>
+                    </select>
+                </Field>
+                <div className="md:col-span-2">
+                    <Field label="Job Categories Interested In">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {JOB_CATEGORIES.map(cat => (
+                                <label key={cat} className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${jobCategories.includes(cat) ? 'bg-brand-navy border-brand-navy text-white' : 'bg-white border-gray-100 text-gray-500'}`}>
+                                    <input type="checkbox" className="hidden" checked={jobCategories.includes(cat)} onChange={e => handleCategoryChange(cat, e.target.checked)} />
+                                    <span className="text-xs font-black uppercase tracking-tight">{cat}</span>
+                                </label>
+                            ))}
                         </div>
-                      </div>
-                    </Link>
-                  ))}
-                  <Link href="/jobs" className="block text-center text-xs font-black text-brand-navy mt-6 hover:underline">
-                     View All Jobs →
-                  </Link>
-               </div>
-            </section>
+                    </Field>
+                </div>
+            </div>
+          </Section>
+
+          {/* 7. Declaration */}
+          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+            <h2 className="text-xl font-black text-gray-900 mb-4">Declaration</h2>
+            <p className="text-sm text-gray-500 italic mb-6">
+                I hereby declare that the information provided above is true and correct to the best of my knowledge.
+            </p>
+            <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" required checked={declarationAccepted} onChange={e => setDeclarationAccepted(e.target.checked)} className="w-5 h-5 rounded border-gray-300 text-brand-navy focus:ring-brand-navy" />
+                <span className="text-sm font-bold text-gray-700">I agree to the declaration <span className="text-red-600" aria-label="required">*</span></span>
+            </label>
           </div>
-        </div>
+
+          {error && <p className="text-red-600 font-bold text-center bg-red-50 p-4 rounded-xl">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-5 px-8 text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+            style={{ backgroundColor: BRAND.primary }}
+          >
+            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+            {loading ? 'Saving Your Profile...' : 'Save & Complete Profile'}
+          </button>
+        </form>
       </div>
+
+      <style jsx global>{`
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            outline: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #1A237E;
+            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+        }
+      `}</style>
     </div>
   )
 }
+
+function Section({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
+    return (
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-navy">
+                    {icon}
+                </div>
+                <h2 className="text-xl font-black text-gray-900 tracking-tight">{title}</h2>
+            </div>
+            {children}
+        </div>
+    )
+}
+
+function Field({ label, children, required = false }: { label: string, children: React.ReactNode, required?: boolean }) {
+    return (
+        <div className="space-y-2">
+            <label className="block text-xs font-black text-gray-600 uppercase tracking-widest">{label}{required && <span className="ml-1 text-red-600" aria-label="required">*</span>}</label>
+            {children}
+        </div>
+    )
+}
