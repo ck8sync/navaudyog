@@ -1,237 +1,263 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import { MapPin, Users, Calendar, Building2, ChevronLeft, CheckCircle2 } from 'lucide-react'
-import Link from 'next/link'
-import CategoryBadge from '@/components/CategoryBadge'
-import StatusBadge from '@/components/StatusBadge'
-import ShareJobButton from '@/components/ShareJobButton'
-import SubmitButton from '@/components/SubmitButton'
-import { sendApplicationStatusEmail } from '@/lib/email/mailer'
+'use client'
 
-export default async function JobDetailPage(props: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ applied?: string; apply_error?: string }>
-}) {
-  const params = await props.params
-  const searchParams = await props.searchParams
-  const supabase = await createClient()
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/context/AuthContext'
+import {
+  DndContext,
+  pointerWithin,
+  rectIntersection,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  CollisionDetection,
+} from '@dnd-kit/core'
+import {
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable'
+import { KANBAN_COLUMNS, BRAND, APPLICATION_STATUS_META, isApplicationStatus, type ApplicationStatus } from '@/lib/constants'
+import KanbanColumn from './KanbanColumn'
+import KanbanCardPreview from './KanbanCardPreview'
+import type { KanbanApplication as Application } from './types'
 
-  const { data: job } = await supabase
-    .from('jobs')
-    .select('*, employer_profiles!employer_id(*)')
-    .eq('id', params.id)
-    .maybeSingle()
+export default function KanbanBoard() {
+  const [applications, setApplications] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
+  const { user, loading: authLoading } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
 
-  if (!job) notFound()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  let application: { status: string; created_at: string } | null = null
-  let role: string | null = null
-  if (user) {
-    const [{ data: appData }, { data: profileData }] = await Promise.all([
-      supabase
-        .from('applications')
-        .select('status, created_at')
-        .eq('job_id', job.id)
-        .eq('employee_id', user.id)
-        .maybeSingle(),
-      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
-    ])
-    application = appData
-    role = profileData?.role ?? null
-  }
-
-  async function applyToJob() {
-    'use server'
-    const supa = await createClient()
-    const { data: { user: currentUser } } = await supa.auth.getUser()
-    if (!currentUser) redirect('/auth/login')
-
-    const { error } = await supa.from('applications').insert({
-      job_id: params.id,
-      employee_id: currentUser.id,
-      status: 'applied',
+  const sensors = useSensors(
+    // Require a small movement before dragging starts so the Call / WhatsApp /
+    // View Full Profile links and the status menu inside a card stay clickable.
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    // On touch screens, press-and-hold to drag so normal scrolling still works.
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
+  )
+
+  const loadApplications = useCallback(async (userId: string) => {
+    setLoadError('')
+
+    const { data: employerJobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('employer_id', userId)
+
+    if (jobsError) {
+      setLoadError(`Could not load your jobs: ${jobsError.message}`)
+      return
+    }
+
+    const jobIds = employerJobs?.map((j) => j.id) || []
+    if (jobIds.length === 0) {
+      setApplications([])
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('applications')
+      .select(`
+        *,
+        profiles:employee_id(
+          full_name,
+          phone,
+          employee_profiles(city, years_experience)
+        ),
+        jobs:job_id(title)
+      `)
+      .in('job_id', jobIds)
+      .order('created_at', { ascending: false })
 
     if (error) {
-      const message = error.code === '23505'
-        ? 'You have already applied for this job.'
-        : error.code === '42501'
-          ? 'Only job seeker accounts can apply for active jobs.'
-          : error.message
-      redirect(`/jobs/${params.id}?apply_error=${encodeURIComponent(message)}`)
+      setLoadError(`Could not load applicants: ${error.message}`)
+      return
     }
 
-    // Confirmation e-mail to the candidate (failure never blocks the application).
-    if (currentUser.email) {
-      const { data: me } = await supa.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle()
-      await sendApplicationStatusEmail({
-        to: currentUser.email,
-        candidateName: me?.full_name || 'there',
-        jobTitle: job.title,
-        companyName: job.employer_profiles?.company_name,
-        status: 'applied',
+    setApplications((data || []) as unknown as Application[])
+  }, [supabase])
+
+  useEffect(() => {
+    if (authLoading) return
+    let cancelled = false
+
+    async function run() {
+      if (!user) {
+        if (!cancelled) {
+          setLoadError('Please sign in with your employer account to view applicants.')
+          setLoading(false)
+        }
+        return
+      }
+      await loadApplications(user.id)
+      if (!cancelled) setLoading(false)
+    }
+
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [user, authLoading, loadApplications])
+
+  /**
+   * Persist a status change in Supabase and only then move the card.
+   * The UI never shows a status that has not been saved.
+   */
+  const updateStatus = useCallback(async (applicationId: string, newStatus: ApplicationStatus) => {
+    const app = applications.find(a => a.id === applicationId)
+    if (!app || app.status === newStatus || pendingIds.has(applicationId)) return
+
+    setPendingIds(prev => new Set(prev).add(applicationId))
+
+    // The server route saves the status (RLS-checked) and e-mails the candidate.
+    let result: { status?: string; error?: string; email?: { sent: boolean; reason?: string } } = {}
+    let ok = false
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      result = await res.json().catch(() => ({}))
+      ok = res.ok && typeof result.status === 'string'
+    } catch {
+      result = { error: 'Network error. Check your connection and try again.' }
+    }
+
+    setPendingIds(prev => {
+      const next = new Set(prev)
+      next.delete(applicationId)
+      return next
+    })
+
+    if (!ok) {
+      toast.error('Status not updated', {
+        description: result.error || 'You do not have permission to update this application.',
+      })
+      return
+    }
+
+    const savedStatus = result.status as string
+    setApplications(prev => prev.map(a =>
+      a.id === applicationId ? { ...a, status: savedStatus } : a
+    ))
+    const name = app.profiles?.full_name || 'Applicant'
+    const label = isApplicationStatus(savedStatus) ? APPLICATION_STATUS_META[savedStatus].label : savedStatus
+    if (result.email?.sent) {
+      toast.success(`${name} moved to ${label}`, { description: 'The candidate has been notified by email.' })
+    } else {
+      toast.success(`${name} moved to ${label}`, {
+        description: `Email not sent: ${result.email?.reason || 'unknown reason'}`,
       })
     }
+  }, [applications, pendingIds])
 
-    revalidatePath('/dashboard/employee')
-    revalidatePath(`/jobs/${params.id}`)
-    redirect(`/jobs/${params.id}?applied=true`)
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null)
+    const { active, over } = event
+    if (!over) return
+
+    const draggedApp = applications.find(a => a.id === active.id)
+    if (!draggedApp) return
+
+    // Dropping onto another card uses that card's column; dropping onto a
+    // column (including an empty one) uses the column's status id.
+    const targetApp = applications.find(a => a.id === over.id)
+    const newStatus = targetApp?.status ?? String(over.id)
+    if (!isApplicationStatus(newStatus) || newStatus === draggedApp.status) return
+
+    void updateStatus(draggedApp.id, newStatus)
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href="/jobs" className="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-navy mb-8 transition-colors">
-          <ChevronLeft className="w-4 h-4 mr-1" /> Back to All Jobs
-        </Link>
+  // Prefer the droppable under the pointer (the column you actually drop on),
+  // falling back to rectangle intersection (keyboard / touch). Ignore the
+  // dragged card itself so it never "drops onto itself".
+  const collisionDetection: CollisionDetection = (args) => {
+    const filtered = {
+      ...args,
+      droppableContainers: args.droppableContainers.filter(c => c.id !== args.active.id),
+    }
+    const pointerHits = pointerWithin(filtered)
+    if (pointerHits.length > 0) return pointerHits
+    return rectIntersection(filtered)
+  }
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header */}
-          <div className="p-8 md:p-12 bg-gradient-to-br from-brand-navy to-[#0D1250] text-white">
-            <div className="flex flex-wrap justify-between items-start gap-6 mb-8">
-              <div className="space-y-4">
-                <CategoryBadge category={job.category} className="bg-white/10 text-white border-white/20" />
-                <h1 className="text-3xl md:text-5xl font-black tracking-tighter">{job.title}</h1>
-                <div className="flex items-center gap-4">
-                  {job.employer_profiles?.logo_url ? (
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 p-1 flex-shrink-0">
-                      <img 
-                        src={job.employer_profiles.logo_url} 
-                        alt={job.employer_profiles.company_name}
-                        className="w-full h-full object-contain rounded-xl"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-8 h-8 opacity-50" />
-                    </div>
-                  )}
-                  <div className="flex items-center text-brand-light font-bold text-lg">
-                    {job.employer_profiles?.company_name}
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                 <div className="text-sm font-bold text-brand-light/70 uppercase tracking-widest mb-1">Monthly Salary</div>
-                 <div className="text-3xl font-black">₹{job.pay_amount} <span className="text-sm font-bold">/ {job.pay_type}</span></div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm font-bold">
-              <ShareJobButton title={job.title} />
-               <div className="flex items-center bg-white/10 px-4 py-2 rounded-full">
-                  <MapPin className="w-4 h-4 mr-2" /> {job.location}
-               </div>
-               <div className="flex items-center bg-white/10 px-4 py-2 rounded-full">
-                  <Users className="w-4 h-4 mr-2" /> {job.openings} Openings Available
-               </div>
-               <div className="flex items-center bg-white/10 px-4 py-2 rounded-full">
-                  <Calendar className="w-4 h-4 mr-2" /> Posted {new Date(job.created_at).toLocaleDateString()}
-               </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-8 md:p-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="md:col-span-2 space-y-10">
-                <section>
-                  <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center">
-                    <span className="w-8 h-1 bg-brand-amber mr-3 rounded-full" />
-                    Job Description
-                  </h2>
-                  <div className="text-gray-600 leading-relaxed text-lg whitespace-pre-wrap">
-                    {job.description}
-                  </div>
-                </section>
-
-                <section>
-                   <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center">
-                    <span className="w-8 h-1 bg-brand-amber mr-3 rounded-full" />
-                    About the Company
-                  </h2>
-                  <div className="flex gap-6 items-start">
-                    {job.employer_profiles?.logo_url && (
-                      <div className="w-20 h-20 rounded-2xl border border-gray-100 p-2 flex-shrink-0">
-                        <img 
-                          src={job.employer_profiles.logo_url} 
-                          alt={job.employer_profiles.company_name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    )}
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      {job.employer_profiles?.description || "A leading company in the industry providing excellent opportunities for growth."}
-                    </p>
-                  </div>
-                </section>
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                  {application ? (
-                    <div className="text-center space-y-4">
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
-                        <CheckCircle2 className="w-6 h-6" />
-                      </div>
-                      <h3 className="font-black text-gray-900">
-                        {searchParams.applied ? 'Application submitted!' : 'Application Submitted'}
-                      </h3>
-                      <StatusBadge status={application.status} />
-                      <p className="text-sm text-gray-500">You applied for this job on {new Date(application.created_at).toLocaleDateString()}</p>
-                      <Link href="/dashboard/employee" className="inline-block text-sm font-bold text-brand-navy hover:underline">
-                        Track status in your dashboard →
-                      </Link>
-                    </div>
-                  ) : !user ? (
-                    <div>
-                      <h3 className="font-black text-gray-900 mb-4">Quick Apply</h3>
-                      <p className="text-sm text-gray-500 mb-6">Sign in with your job seeker account to apply.</p>
-                      <Link href="/auth/login" className="btn-primary block text-center w-full py-4 text-lg">
-                        Sign in to Apply
-                      </Link>
-                    </div>
-                  ) : role !== 'employee' ? (
-                    <div>
-                      <h3 className="font-black text-gray-900 mb-2">Quick Apply</h3>
-                      <p className="text-sm text-gray-500">Only job seeker accounts can apply for jobs.</p>
-                    </div>
-                  ) : job.status !== 'active' ? (
-                    <div>
-                      <h3 className="font-black text-gray-900 mb-2">Applications closed</h3>
-                      <p className="text-sm text-gray-500">This job is no longer accepting applications.</p>
-                    </div>
-                  ) : (
-                    <form action={applyToJob}>
-                      <h3 className="font-black text-gray-900 mb-4">Quick Apply</h3>
-                      <p className="text-sm text-gray-500 mb-6">No resume needed. Your Nava Udyog profile will be shared with the employer.</p>
-                      {searchParams.apply_error && (
-                        <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
-                          {searchParams.apply_error}
-                        </p>
-                      )}
-                      <SubmitButton className="btn-primary w-full py-4 text-lg" pendingLabel="Submitting…">
-                        Apply Now
-                      </SubmitButton>
-                    </form>
-                  )}
-                </div>
-
-                <div className="p-6 border border-gray-100 rounded-2xl">
-                   <h4 className="font-black text-xs uppercase tracking-widest text-gray-400 mb-4">Hiring Location</h4>
-                   <div className="flex items-center text-gray-700 font-bold">
-                      <MapPin className="w-5 h-5 mr-2 text-brand-amber" />
-                      {job.location}
-                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="h-9 w-64 bg-gray-100 rounded-xl animate-pulse mb-8" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {KANBAN_COLUMNS.map(c => (
+            <div key={c.id} className="h-[500px] rounded-3xl bg-gray-100 animate-pulse" />
+          ))}
         </div>
       </div>
+    )
+  }
+
+  const activeApp = activeId ? applications.find(a => a.id === activeId) : undefined
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold" style={{ color: BRAND.primary }}>
+          Applicants Kanban
+        </h1>
+        {user && (
+          <button
+            type="button"
+            onClick={() => { setLoading(true); loadApplications(user.id).finally(() => setLoading(false)) }}
+            className="text-xs font-black uppercase tracking-widest text-gray-500 hover:text-brand-navy border border-gray-200 rounded-xl px-4 py-2 bg-white"
+          >
+            Refresh
+          </button>
+        )}
+      </div>
+
+      {loadError && (
+        <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+          {loadError}
+        </div>
+      )}
+
+      {!loadError && applications.length === 0 && (
+        <p className="mb-6 text-sm font-bold text-gray-500">
+          No applications yet. New applicants will appear in the Applied column.
+        </p>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveId(null)}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {KANBAN_COLUMNS.map(column => (
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              applications={applications.filter(a => a.status === column.id)}
+              pendingIds={pendingIds}
+              onStatusChange={updateStatus}
+            />
+          ))}
+        </div>
+        <DragOverlay>
+          {activeApp ? <KanbanCardPreview application={activeApp} /> : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   )
 }
