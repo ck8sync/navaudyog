@@ -1,263 +1,173 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/context/AuthContext'
-import {
-  DndContext,
-  pointerWithin,
-  rectIntersection,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-  CollisionDetection,
-} from '@dnd-kit/core'
-import {
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable'
-import { KANBAN_COLUMNS, BRAND, APPLICATION_STATUS_META, isApplicationStatus, type ApplicationStatus } from '@/lib/constants'
-import KanbanColumn from './KanbanColumn'
-import KanbanCardPreview from './KanbanCardPreview'
-import type { KanbanApplication as Application } from './types'
+import Logo from '@/components/Logo'
+import '@/app/auth/auth.css'
 
-export default function KanbanBoard() {
-  const [applications, setApplications] = useState<Application[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
-  const { user, loading: authLoading } = useAuth()
-  const supabase = useMemo(() => createClient(), [])
-
-  const sensors = useSensors(
-    // Require a small movement before dragging starts so the Call / WhatsApp /
-    // View Full Profile links and the status menu inside a card stay clickable.
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    // On touch screens, press-and-hold to drag so normal scrolling still works.
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  const loadApplications = useCallback(async (userId: string) => {
-    setLoadError('')
-
-    const { data: employerJobs, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('employer_id', userId)
-
-    if (jobsError) {
-      setLoadError(`Could not load your jobs: ${jobsError.message}`)
-      return
-    }
-
-    const jobIds = employerJobs?.map((j) => j.id) || []
-    if (jobIds.length === 0) {
-      setApplications([])
-      return
-    }
-
-    const { data, error } = await supabase
-      .from('applications')
-      .select(`
-        *,
-        profiles:employee_id(
-          full_name,
-          phone,
-          employee_profiles(city, years_experience)
-        ),
-        jobs:job_id(title)
-      `)
-      .in('job_id', jobIds)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      setLoadError(`Could not load applicants: ${error.message}`)
-      return
-    }
-
-    setApplications((data || []) as unknown as Application[])
-  }, [supabase])
+export default function ResetPasswordPage() {
+  const [checkingSession, setCheckingSession] = useState(true)
+  const [hasSession, setHasSession] = useState(false)
+  const [linkError, setLinkError] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [complete, setComplete] = useState(false)
 
   useEffect(() => {
-    if (authLoading) return
-    let cancelled = false
+    const supabase = createClient()
+    let active = true
 
-    async function run() {
-      if (!user) {
-        if (!cancelled) {
-          setLoadError('Please sign in with your employer account to view applicants.')
-          setLoading(false)
-        }
-        return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return
+      if (
+        (event === 'PASSWORD_RECOVERY' ||
+          event === 'SIGNED_IN' ||
+          event === 'INITIAL_SESSION' ||
+          event === 'TOKEN_REFRESHED') &&
+        session
+      ) {
+        setHasSession(true)
+        setLinkError('')
+        setCheckingSession(false)
       }
-      await loadApplications(user.id)
-      if (!cancelled) setLoading(false)
-    }
-
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [user, authLoading, loadApplications])
-
-  /**
-   * Persist a status change in Supabase and only then move the card.
-   * The UI never shows a status that has not been saved.
-   */
-  const updateStatus = useCallback(async (applicationId: string, newStatus: ApplicationStatus) => {
-    const app = applications.find(a => a.id === applicationId)
-    if (!app || app.status === newStatus || pendingIds.has(applicationId)) return
-
-    setPendingIds(prev => new Set(prev).add(applicationId))
-
-    // The server route saves the status (RLS-checked) and e-mails the candidate.
-    let result: { status?: string; error?: string; email?: { sent: boolean; reason?: string } } = {}
-    let ok = false
-    try {
-      const res = await fetch(`/api/applications/${applicationId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      result = await res.json().catch(() => ({}))
-      ok = res.ok && typeof result.status === 'string'
-    } catch {
-      result = { error: 'Network error. Check your connection and try again.' }
-    }
-
-    setPendingIds(prev => {
-      const next = new Set(prev)
-      next.delete(applicationId)
-      return next
     })
 
-    if (!ok) {
-      toast.error('Status not updated', {
-        description: result.error || 'You do not have permission to update this application.',
-      })
+    async function verifyResetLink() {
+      try {
+        const searchParams = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+
+        const urlError =
+          searchParams.get('error_description') ||
+          hashParams.get('error_description') ||
+          searchParams.get('error') ||
+          hashParams.get('error')
+
+        if (urlError) {
+          if (active) {
+            setLinkError(urlError.replace(/\+/g, ' '))
+            setHasSession(false)
+            setCheckingSession(false)
+          }
+          return
+        }
+
+        const tokenHash = searchParams.get('token_hash')
+        const type = searchParams.get('type')
+        const code = searchParams.get('code')
+
+        // 1. Handle ?token_hash=...&type=recovery links
+        if (tokenHash && (type === 'recovery' || !type)) {
+          const { data, error: otpError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery',
+          })
+          if (!active) return
+          if (otpError) {
+            setLinkError(otpError.message)
+            setHasSession(false)
+          } else {
+            setHasSession(Boolean(data.session))
+          }
+          setCheckingSession(false)
+          return
+        }
+
+        // 2. Check if a session already exists (or was auto-detected from URL)
+        const { data: initialData } = await supabase.auth.getSession()
+        if (!active) return
+        if (initialData.session) {
+          setHasSession(true)
+          setCheckingSession(false)
+          return
+        }
+
+        // 3. Handle PKCE ?code=... links if not yet exchanged
+        if (code) {
+          const { data: codeData, error: codeError } = await supabase.auth.exchangeCodeForSession(code)
+          if (!active) return
+          if (codeData?.session) {
+            setHasSession(true)
+            setCheckingSession(false)
+            return
+          }
+          // The singleton client may have just finished exchanging the code; check getSession once more
+          const { data: retryData } = await supabase.auth.getSession()
+          if (!active) return
+          if (retryData.session) {
+            setHasSession(true)
+          } else if (codeError) {
+            setLinkError(codeError.message)
+            setHasSession(false)
+          }
+          setCheckingSession(false)
+          return
+        }
+
+        setHasSession(false)
+        setCheckingSession(false)
+      } catch {
+        if (active) {
+          setHasSession(false)
+          setCheckingSession(false)
+        }
+      }
+    }
+
+    void verifyResetLink()
+    return () => { active = false; subscription.unsubscribe() }
+  }, [])
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.')
       return
     }
-
-    const savedStatus = result.status as string
-    setApplications(prev => prev.map(a =>
-      a.id === applicationId ? { ...a, status: savedStatus } : a
-    ))
-    const name = app.profiles?.full_name || 'Applicant'
-    const label = isApplicationStatus(savedStatus) ? APPLICATION_STATUS_META[savedStatus].label : savedStatus
-    if (result.email?.sent) {
-      toast.success(`${name} moved to ${label}`, { description: 'The candidate has been notified by email.' })
-    } else {
-      toast.success(`${name} moved to ${label}`, {
-        description: `Email not sent: ${result.email?.reason || 'unknown reason'}`,
-      })
+    if (password !== confirmPassword) {
+      setError('The passwords do not match. Please check them and try again.')
+      return
     }
-  }, [applications, pendingIds])
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveId(null)
-    const { active, over } = event
-    if (!over) return
-
-    const draggedApp = applications.find(a => a.id === active.id)
-    if (!draggedApp) return
-
-    // Dropping onto another card uses that card's column; dropping onto a
-    // column (including an empty one) uses the column's status id.
-    const targetApp = applications.find(a => a.id === over.id)
-    const newStatus = targetApp?.status ?? String(over.id)
-    if (!isApplicationStatus(newStatus) || newStatus === draggedApp.status) return
-
-    void updateStatus(draggedApp.id, newStatus)
-  }
-
-  // Prefer the droppable under the pointer (the column you actually drop on),
-  // falling back to rectangle intersection (keyboard / touch). Ignore the
-  // dragged card itself so it never "drops onto itself".
-  const collisionDetection: CollisionDetection = (args) => {
-    const filtered = {
-      ...args,
-      droppableContainers: args.droppableContainers.filter(c => c.id !== args.active.id),
+    setLoading(true)
+    try {
+      const supabase = createClient()
+      const { error: updateError } = await supabase.auth.updateUser({ password })
+      if (updateError) {
+        setError(updateError.message)
+        return
+      }
+      await supabase.auth.signOut()
+      setComplete(true)
+    } catch {
+      setError('We could not update your password. Request a new reset link and try again.')
+    } finally {
+      setLoading(false)
     }
-    const pointerHits = pointerWithin(filtered)
-    if (pointerHits.length > 0) return pointerHits
-    return rectIntersection(filtered)
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="h-9 w-64 bg-gray-100 rounded-xl animate-pulse mb-8" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {KANBAN_COLUMNS.map(c => (
-            <div key={c.id} className="h-[500px] rounded-3xl bg-gray-100 animate-pulse" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  const activeApp = activeId ? applications.find(a => a.id === activeId) : undefined
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: BRAND.primary }}>
-          Applicants Kanban
-        </h1>
-        {user && (
-          <button
-            type="button"
-            onClick={() => { setLoading(true); loadApplications(user.id).finally(() => setLoading(false)) }}
-            className="text-xs font-black uppercase tracking-widest text-gray-500 hover:text-brand-navy border border-gray-200 rounded-xl px-4 py-2 bg-white"
-          >
-            Refresh
-          </button>
-        )}
+  return <div className="auth-page">
+    <div className="auth-orbit" aria-hidden="true" />
+    <div className="auth-shell">
+      <div className="auth-heading">
+        <Link href="/" className="auth-brand" aria-label="Nava Udyog home"><Logo /></Link>
+        <p className="auth-kicker">Account recovery</p>
+        <h1>{complete ? 'Password updated.' : 'Choose a new password.'}</h1>
+        <p className="auth-description">{complete ? 'Your password has been changed. Sign in with your new password to continue.' : 'Create a new password to get back to your account.'}</p>
       </div>
 
-      {loadError && (
-        <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-          {loadError}
-        </div>
-      )}
-
-      {!loadError && applications.length === 0 && (
-        <p className="mb-6 text-sm font-bold text-gray-500">
-          No applications yet. New applicants will appear in the Applied column.
-        </p>
-      )}
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={collisionDetection}
-        onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}
-        onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveId(null)}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {KANBAN_COLUMNS.map(column => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              applications={applications.filter(a => a.status === column.id)}
-              pendingIds={pendingIds}
-              onStatusChange={updateStatus}
-            />
-          ))}
-        </div>
-        <DragOverlay>
-          {activeApp ? <KanbanCardPreview application={activeApp} /> : null}
-        </DragOverlay>
-      </DndContext>
+      <div className="auth-card">
+        {checkingSession ? <p className="auth-description auth-state">Checking your reset link…</p> : complete ? <div className="auth-form"><div className="auth-notice" role="status">Your password has been updated successfully.</div><Link className="auth-submit auth-link-button" href="/auth/login">Back to sign in <span aria-hidden="true">→</span></Link></div> : hasSession ? <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-field"><label htmlFor="password">New password</label><input id="password" type="password" autoComplete="new-password" minLength={8} required placeholder="At least 8 characters" value={password} onChange={(event) => setPassword(event.target.value)} /></div>
+          <div className="auth-field"><label htmlFor="confirmPassword">Confirm new password</label><input id="confirmPassword" type="password" autoComplete="new-password" minLength={8} required placeholder="Enter the password again" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
+          {error && <div className="auth-alert" role="alert">{error}</div>}
+          <button type="submit" disabled={loading} className="auth-submit">{loading ? 'Updating password…' : 'Update password'} <span aria-hidden="true">→</span></button>
+        </form> : <div className="auth-form"><div className="auth-alert" role="alert">{linkError || 'This reset link is invalid or has expired. Request a new one to continue.'}</div><Link className="auth-submit auth-link-button" href="/auth/login?mode=reset">Request a new link <span aria-hidden="true">→</span></Link></div>}
+      </div>
+      <p className="auth-footnote">Choose a password you haven&apos;t used before.</p>
     </div>
-  )
+  </div>
 }
