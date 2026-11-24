@@ -59,8 +59,16 @@ export async function middleware(request: NextRequest) {
   const url = new URL(request.url)
   const path = url.pathname
 
+  // If Supabase falls back to Site URL (/) for a password recovery link,
+  // forward the recovery parameters to /auth/reset-password.
+  if (path === '/' && url.searchParams.get('type') === 'recovery') {
+    const resetUrl = new URL('/auth/reset-password', request.url)
+    resetUrl.search = url.search
+    return NextResponse.redirect(resetUrl)
+  }
+
   // Public routes
-  const publicRoutes = ['/', '/jobs', '/auth/login', '/auth/register', '/auth/reset-password']
+  const publicRoutes = ['/', '/jobs', '/auth/login', '/auth/register', '/auth/reset-password', '/auth/callback']
   if (publicRoutes.includes(path) || path.startsWith('/jobs/')) {
     return response
   }
