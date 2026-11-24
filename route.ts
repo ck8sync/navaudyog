@@ -1,81 +1,42 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { type EmailOtpType } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-import { isApplicationStatus } from '@/lib/constants'
-import { sendApplicationStatusEmail } from '@/lib/email/mailer'
-
-export const runtime = 'nodejs'
 
 /**
- * PATCH /api/applications/:id/status  { status }
- *
- * Updates an application's status as the signed-in employer (RLS ensures they
- * own the job), then e-mails the candidate. The status change is saved even if
- * the e-mail fails; the response reports both outcomes.
+ * GET /auth/callback
+ * Exchanges a Supabase PKCE `?code=` or email `?token_hash=&type=` for a
+ * session cookie and redirects to the target page (e.g. /auth/reset-password).
  */
-export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url)
+  const code = url.searchParams.get('code')
+  const tokenHash = url.searchParams.get('token_hash')
+  const type = url.searchParams.get('type') as EmailOtpType | null
+  const nextParam = url.searchParams.get('next')
+  const defaultNext = type === 'recovery' ? '/auth/reset-password' : '/'
+  const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : defaultNext
+
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    if (error) {
+      const dest = new URL('/auth/reset-password', url.origin)
+      dest.searchParams.set('error_description', error.message)
+      return NextResponse.redirect(dest)
+    }
+    return NextResponse.redirect(new URL(nextPath, url.origin))
   }
 
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
-  }
-  const status = (body as { status?: unknown })?.status
-  if (!isApplicationStatus(status)) {
-    return NextResponse.json({ error: 'Invalid application status.' }, { status: 400 })
-  }
-
-  // Current status (RLS: only visible to the job owner / the candidate).
-  const { data: existing, error: readError } = await supabase
-    .from('applications')
-    .select('id, status')
-    .eq('id', id)
-    .maybeSingle()
-
-  if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
-  if (!existing) return NextResponse.json({ error: 'Application not found.' }, { status: 404 })
-  if (existing.status === status) {
-    return NextResponse.json({ status, unchanged: true, email: { sent: false, reason: 'Status unchanged.' } })
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      const dest = new URL('/auth/reset-password', url.origin)
+      dest.searchParams.set('error_description', error.message)
+      return NextResponse.redirect(dest)
+    }
+    return NextResponse.redirect(new URL(nextPath, url.origin))
   }
 
-  // RLS + column grants (migration 007) allow only the job's employer to change status.
-  const { data: updated, error: updateError } = await supabase
-    .from('applications')
-    .update({ status })
-    .eq('id', id)
-    .select('id, status')
-
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
-  if (!updated || updated.length === 0) {
-    return NextResponse.json({ error: 'You do not have permission to update this application.' }, { status: 403 })
-  }
-
-  // Look up the candidate's e-mail via the scoped SECURITY DEFINER function (migration 008).
-  const { data: contacts, error: contactError } = await supabase
-    .rpc('get_application_contact', { p_application_id: id })
-
-  const contact = Array.isArray(contacts) ? contacts[0] : null
-  let email: { sent: boolean; reason?: string }
-  if (contactError || !contact?.email) {
-    email = { sent: false, reason: contactError?.message || 'Candidate e-mail not found.' }
-    console.error('[email] Could not load candidate contact:', email.reason)
-  } else {
-    email = await sendApplicationStatusEmail({
-      to: contact.email,
-      candidateName: contact.full_name || 'there',
-      jobTitle: contact.job_title || 'your job application',
-      companyName: contact.company_name,
-      status: updated[0].status,
-    })
-  }
-
-  return NextResponse.json({ status: updated[0].status, email })
+  return NextResponse.redirect(new URL(nextPath, url.origin))
 }
-
